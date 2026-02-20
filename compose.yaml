@@ -1,0 +1,115 @@
+services:
+  ssh-tunnel:
+    build: ./ssh-tunnel
+    image: ssh-tunnel:unmetered-code
+    container_name: ssh-tunnel-unmetered-code
+    environment:
+      - SSH_HOST=${SSH_HOST}
+      - SSH_PORT=${SSH_PORT}
+      - REMOTE_PORT=${REMOTE_PORT:-8080}
+      - LOCAL_PORT=${REMOTE_PORT:-8080}
+    volumes:
+      - ~/.ssh:/ssh-keys:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${REMOTE_PORT:-8080} 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-unmetered-code
+    environment:
+      - LLAMA_API_BASE=${LLAMA_API_BASE}
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health')\" 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    restart: unless-stopped
+
+  opencode:
+    build: ./opencode
+    image: opencode-dev:unmetered-code
+    container_name: opencode-unmetered-code
+    stdin_open: true
+    tty: true
+    environment:
+      - OPENCODE_CONFIG=/config/opencode.json
+    volumes:
+      - ./workspace:/workspace:rw
+      - ./config:/config:ro
+    working_dir: /workspace
+    depends_on:
+      litellm:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    restart: unless-stopped
+
+  anthropic-proxy:
+    build: ./anthropic-proxy
+    image: anthropic-proxy:unmetered-code
+    container_name: anthropic-proxy-unmetered-code
+    environment:
+      - UPSTREAM=http://litellm:4000
+      - PORT=4001
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4001/health')\" 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      litellm:
+        condition: service_healthy
+    restart: unless-stopped
+
+  claude:
+    build: ./claude
+    image: claude-code-dev:unmetered-code
+    container_name: claude-code-unmetered-code
+    stdin_open: true
+    tty: true
+    environment:
+      - ANTHROPIC_AUTH_TOKEN=vast-llama
+      - ANTHROPIC_BASE_URL=http://anthropic-proxy:4001
+    volumes:
+      - ./workspace:/workspace:rw
+      - claude-home:/home/node
+    working_dir: /workspace
+    depends_on:
+      anthropic-proxy:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng-unmetered-code
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  claude-home:
