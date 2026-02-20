@@ -13,9 +13,7 @@ and your rented GPU.
 
 ## Architecture
 
-<!-- ![Architecture diagram](assets/architecture.png) -->
-<img src="assets/architecture.png" width="50%" alt="Architecture" />
-
+![Architecture diagram](assets/architecture.png)
 
 ### Why MiniMax M2.5
 
