@@ -28,32 +28,6 @@ token), trained with RL across 200K+ real-world coding environments in
 - **Fast** — completes SWE-Bench tasks 37% faster than its predecessor,
   matching Claude Opus 4.6 in wall-clock time
 
-**Coding benchmarks** — M2.5 matches frontier closed models on code:
-
-| Benchmark | [M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) | Sonnet 4.6 | Opus 4.6 |
-|-----------|:---:|:---:|:---:|
-| SWE-Bench Verified | **80.2%** | 79.6% | **80.8%** |
-| Multi-SWE-Bench | **51.3%** | — | — |
-| Terminal-Bench 2 | 46.3% | 59.1% | **65.4%** |
-| BrowseComp | 76.3% | — | **84.0%** |
-
-**General reasoning** — competitive but trails Opus and GPT-5:
-
-| Benchmark | [M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) | Sonnet 4.5 | Opus 4.6 | GPT-5.2 |
-|-----------|:---:|:---:|:---:|:---:|
-| AIME 2025 | 86.3 | 88.0 | **95.6** | **98.0** |
-| GPQA Diamond | 85.2 | 83.0 | **90.0** | **90.0** |
-| SciCode | 44.4 | 45.0 | 52.0 | 52.0 |
-
-Scores are self-reported by each vendor using their own agent scaffolds
-(M2.5 coding benchmarks used Claude Code as the scaffold). See the
-[model card](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) for full
-results and methodology.
-
-**Bottom line:** M2.5 is at the Sonnet/Opus level on SWE-Bench — where
-it matters most for a coding agent — while being fully open-weight and
-self-hostable.
-
 ### Inference Performance
 
 Measured on 2× RTX Pro 6000 (192 GB VRAM), UD-Q4_K_XL quantization:
@@ -61,7 +35,7 @@ Measured on 2× RTX Pro 6000 (192 GB VRAM), UD-Q4_K_XL quantization:
 | | 1 agent | 4 agents (parallel) |
 |---|:---:|:---:|
 | **Generation speed** | ~50 tok/s | ~20 tok/s per agent |
-| **Context window** | 640K tokens | 160K tokens each |
+| **Context window** | 160K tokens | 160K tokens each |
 
 | Metric | Value |
 |--------|-------|
