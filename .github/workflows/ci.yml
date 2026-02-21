@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  shellcheck:
+    name: Shell lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Shellcheck
+        uses: ludeeus/action-shellcheck@v0.3.0
+        with:
+          scandir: .
+          severity: warning
+
+  ruff:
+    name: Python lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruff
+        uses: astral-sh/setup-ruff@v4
+        with:
+          version: "latest"
+
+      - name: Run Ruff
+        run: ruff check anthropic-proxy/proxy.py bench.py
+
+  ruff-format:
+    name: Python format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruff
+        uses: astral-sh/setup-ruff@v4
+        with:
+          version: "latest"
+
+      - name: Run Ruff format check
+        run: ruff format --check anthropic-proxy/proxy.py bench.py
+
+  compose:
+    name: Compose validate & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create minimal .env for Compose
+        run: |
+          cat <<'EOF' > .env
+          SSH_HOST=ci
+          SSH_PORT=22
+          REMOTE_PORT=8080
+          LLAMA_API_BASE=http://localhost:8080/v1
+          EOF
+
+      - name: Validate Compose config
+        run: docker compose config
+
+      - name: Build images
+        run: docker compose build
