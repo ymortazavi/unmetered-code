@@ -14,6 +14,9 @@ through an encrypted SSH tunnel — no code, prompts, or outputs are sent
 to any third-party API. Everything stays between your local Docker stack
 and your rented GPU.
 
+
+> **If unmetered-code cuts your AI spend, [sponsor the project](https://github.com/sponsors/ymortazavi) to keep it maintained and updated.**
+
 ## Architecture
 
 ![Architecture diagram](assets/architecture.png)
