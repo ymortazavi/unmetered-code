@@ -5,425 +5,67 @@
 
 **Private AI coding agents. No rate limits. ~$1.50/hr.**
 
-Run your favorite AI coders (currently supporting [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](https://github.com/anomalyco/opencode))
-with [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) on rented GPUs —
-no API keys, no per-token billing, no usage caps. Your code **never
-leaves your machine**. The model runs on a
-[Vast.ai](https://cloud.vast.ai/?ref_id=399895) GPU instance connected
-through an encrypted SSH tunnel — no code, prompts, or outputs are sent
-to any third-party API. Everything stays between your local Docker stack
-and your rented GPU. Agents can use **[SearXNG](https://github.com/searxng/searxng)** for free web search (no search API key required).
-
-
-> **If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi) to keep it updated.**
-
-## Architecture
+Run [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](https://github.com/anomalyco/opencode) backed by [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) on rented GPUs — no API keys, no per-token billing, no usage caps.
 
 ![Architecture diagram](assets/architecture.png)
 
-### Why MiniMax M2.5
+- **Private** — model runs on your rented GPU, connected via encrypted SSH tunnel; no code or prompts sent to third-party APIs
+- **Unmetered** — flat GPU cost (~$1.50/hr), ~50 tok/s single agent, ~20 tok/s per agent with 4 running in parallel; no rate limits
+- **Web search** — [SearXNG](https://github.com/searxng/searxng) MCP pre-configured for both agents; no search API key required
+- **Full dev stack** — Node.js 24, Python 3.13, Rust, C/C++, and standard tooling in every agent container
 
-This repo runs [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5)
-by default — a 230B-parameter Mixture-of-Experts model (10B active per
-token), trained with RL across 200K+ real-world coding environments in
-10+ languages (Python, Go, C++, TypeScript, Rust, Java, and more).
+> If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi).
 
-- **Open-weight** (Modified MIT license) — run it locally, no API keys
-- **Full-stack** — trained across Web, Android, iOS, and Windows projects
-- **Architect-mode** — decomposes and plans features before writing code
-- **Fast** — completes SWE-Bench tasks 37% faster than its predecessor,
-  matching Claude Opus 4.6 in wall-clock time
-
-### Inference Performance
-
-Measured on 2× RTX Pro 6000 (192 GB VRAM), [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quantization:
-
-| | 1 agent | 4 agents (parallel) |
-|---|:---:|:---:|
-| **Generation speed** | ~50 tok/s | ~20 tok/s per agent |
-| **Context window** | 160K tokens | 160K tokens each |
-
-| Metric | Value |
-|--------|-------|
-| GPU cost | ~$1.50/hr (varies by availability) |
-| Time to first token | ~2–5s (depends on prompt length) |
-| Quantization | [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) (~123 GB weights) |
-
-Speed varies with prompt length, quantization, and GPU hardware. These
-numbers are from informal testing, not rigorous benchmarks.
-
-### Pre-installed Dev Toolchains
-
-Both agent containers come with full development environments:
-
-| Tool | Claude Code | OpenCode | Notes |
-|------|:-----------:|:--------:|-------|
-| Node.js | 24.x LTS | 24.x LTS | npm included |
-| Python | 3.13.x | 3.13.x | pip, venv, dev headers |
-| Rust | stable | stable | installed via rustup, cargo included |
-| C/C++ | gcc, g++ | gcc, g++ | make, cmake included |
-| Utilities | git, ripgrep, fd, jq, vim, tree | same | standard dev tools |
-
-Both agent containers use the same Debian-based dev stack. They share a
-`/workspace` volume, so files created by one agent are immediately
-visible to the other.
-
-
-## Prerequisites
-
-### Required
-
-- **Docker + Docker Compose** — needed to run the local service stack
-  (LiteLLM, SSH tunnel, agents, [SearXNG](https://github.com/searxng/searxng) for free web search). Install via
-  [Docker Desktop](https://docs.docker.com/get-docker/) (macOS / Windows)
-  or [Docker Engine](https://docs.docker.com/engine/install/) (Linux).
-  Compose v2 is included with modern Docker installs.
-
-- **Python 3** — used by the provisioning scripts to parse JSON responses
-  from the Vast.ai API. Pre-installed on macOS and most Linux distros.
-
-- **Vast.ai account** — [sign up here](https://cloud.vast.ai/?ref_id=399895)
-  and load funds. GPU rental is billed per hour; the scripts create and
-  destroy instances on demand.
-
-- **Vast.ai CLI** — install with pip, then set your API key:
-
-  ```bash
-  pip install vastai
-  ```
-
-- **SSH key pair in `~/.ssh/`** — the SSH tunnel container bind-mounts
-  your `~/.ssh` directory (read-only) and copies any `id_*` key files
-  into the container. It uses these to authenticate with the Vast.ai
-  instance. If you don't have a key pair yet:
-
-  ```bash
-  ssh-keygen -t ed25519 -C "your_email@example.com"
-  ```
-
-  Press Enter to accept the default path (`~/.ssh/id_ed25519`). A
-  passphrase is optional.
-
-  Then register the public key with Vast.ai:
-
-  ```bash
-  vastai set ssh-key "$(cat ~/.ssh/id_ed25519.pub)"
-  ```
-
-  Verify it was registered:
-
-  ```bash
-  vastai show ssh-keys
-  ```
-
-### Optional
-
-- **HuggingFace account + token** — only needed if you want to download
-  gated or private models (e.g. Llama, Mistral). The default model
-  ([unsloth/MiniMax-M2.5-GGUF](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF)) is public and downloads without
-  authentication. Having a HuggingFace token can also give you **faster
-  downloads** from the HuggingFace CDN compared to anonymous access.
-  See [Step 2](#2-configure-configenv) for how to set it up.
-
-- **VS Code** — needed only if you want to use `./open-vscode.sh` to
-  attach VS Code directly to the agent containers. The
-  [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-  extension is required.
-
-## Quick Start
-
-### Option A — One-shot install (curl → CLI → full setup)
-
-One script downloads the repo, asks for your Vast API key (and optional HuggingFace token), finds a GPU offer, provisions the instance, connects the tunnel, and starts Docker. **Before it exits, it prints clear instructions on how to destroy the Vast instance to stop billing.**
+## Get started
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/ymortazavi/unmetered-code/main/install.sh | bash
 ```
 
-You will be prompted for: install directory (default `~/unmetered-code`), Vast.ai API key, optional HuggingFace token, SSH key registration, and an OFFER_ID (the script runs `vastai search offers` and shows a table so you can paste an ID). When done, **save the destroy command** the script prints so you can stop billing when finished.
+Prompts for your Vast.ai API key, finds a GPU, provisions the instance, starts the tunnel, and launches Docker. Prints a destroy command at the end so you can stop billing when done.
 
-### Option B — Manual steps
+For manual setup, prerequisites, and configuration options, see the **[Setup Guide](docs/setup.md)**.
 
-### 1. Clone the repo
+## Usage
 
-```bash
-git clone https://github.com/ymortazavi/unmetered-code.git
-cd unmetered-code
-```
+Once the stack is up, run an agent:
 
-### 2. Get your Vast.ai API key
+| Script | Description |
+|--------|-------------|
+| `./opencode.sh` | OpenCode — interactive TUI |
+| `./claude.sh` | Claude Code — prompts for tool permissions |
+| `./claude-yolo.sh` | Claude Code — skips all permission prompts |
 
-[Sign up on Vast.ai](https://cloud.vast.ai/?ref_id=399895), add credits,
-then go to [Account](https://cloud.vast.ai/account/) to generate an API
-key and copy it. You'll paste it into `config.env` in the next step.
-
-### 3. Configure `config.env`
-
-Open `config.env` and set your Vast.ai API key:
+Or attach VS Code directly to a container:
 
 ```bash
-VAST_API_KEY="your_vast_api_key_here"
-```
-
-**HuggingFace token (optional):** If your model is gated/private, or you
-want faster downloads, uncomment the `HF_TOKEN` line and set it:
-
-1. Create a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (read access is sufficient)
-2. Accept the model's license agreement on its HuggingFace page
-3. Uncomment and set the token in `config.env`:
-
-```bash
-HF_TOKEN="your_hf_token_here"
-```
-
-If the line is commented out or set to `"none"`, HuggingFace authentication
-is skipped entirely — the default public model works fine without it.
-
-### 4. Find a GPU offer
-
-Search for available machines on Vast.ai:
-
-```bash
-vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph
-```
-
-This returns a table of offers (sorted by price, cheapest first). The **ID** is
-in the first column; **dph** is $/hour. Omit `-o dph` to use the default sort.
-
-> **Tip:** For the default MiniMax-M2.5 model at [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quantization,
-> you need at least **192 GB VRAM** (e.g. 2x RTX Pro 6000). See the
-> [VRAM Budget](#vram-budget) section for details on what fits.
-
-### 5. Provision the remote instance
-
-```bash
-./provision.sh <OFFER_ID>
-```
-
-This creates a Vast.ai instance that downloads the model and starts
-`llama-server`. The llama port is **not** exposed publicly — it is only
-reachable through the SSH tunnel.
-
-The script waits for the instance to enter `running` state, then prints
-next steps. Model download takes 5–10 minutes depending on size and
-network speed.
-
-### 6. Connect the SSH tunnel
-
-```bash
-./connect.sh
-```
-
-This fetches the instance's public IP and SSH port, tests the SSH
-connection, and writes a `.env` file with the tunnel parameters for Docker
-Compose.
-
-If SSH isn't ready yet (the instance is still booting), re-run after a
-minute or two.
-
-### 7. Start local services
-
-```bash
-docker compose up -d
-```
-
-This pulls the prebuilt images from GHCR (linux/amd64 and linux/arm64) and starts the stack.
-If you prefer to build your own images, run:
-
-```bash
-docker compose -f compose.yaml -f compose.build.yaml up -d --build
-```
-
-> **Note:** The first run can take several minutes (often 2–5+ min) while the four custom images are built. Later runs reuse the images.
-
-| Container | Role |
-|-----------|------|
-| `ssh-tunnel` | Encrypted tunnel to the Vast.ai llama-server |
-| `litellm` | API proxy (OpenAI + Anthropic compatible) |
-| `anthropic-proxy` | Translates Anthropic API format for Claude Code |
-| `opencode` | OpenCode agent with shared `/workspace` |
-| `claude` | Claude Code agent with shared `/workspace` |
-| `searxng` | Free web search for agents ([SearXNG](https://github.com/searxng/searxng)) at `http://localhost:8080` |
-
-Docker Compose handles startup order automatically — each service waits for
-its dependencies to be healthy before starting. Both agents have [SearXNG](https://github.com/searxng/searxng) MCP preconfigured for web search at no extra cost.
-
-### 8. Verify everything is working
-
-```bash
-# Check the SSH tunnel is forwarding
-docker compose exec ssh-tunnel nc -z 127.0.0.1 8080
-
-# Check LiteLLM can reach the backend
-curl -s http://localhost:4000/health
-
-# View tunnel logs if needed
-docker compose logs ssh-tunnel
-```
-
-**Optional — compare agent latency:** Run a prompt through both agents and see timing (helps confirm the stack is responsive). Use `-p` to run both in parallel:
-
-```bash
-# sequential
-./bench-agents.sh "hi"
-# parallel (faster wall-clock)
-./bench-agents.sh -p "hi"
-# test tool calls
-./bench-agents.sh -p "build a simple terminal snake app in Python with a unique name" 
-# test web search (MCP)
-./bench-agents.sh -p "report high/low/open/close for S&P 500 ETF SPY in the last trading session"
-```
-
-### 9. Use the agents
-
-**Option A — VS Code (recommended):**
-
-```bash
-./open-vscode.sh --opencode   # OpenCode only
-./open-vscode.sh --claude     # Claude Code only
+./open-vscode.sh --opencode   # OpenCode
+./open-vscode.sh --claude     # Claude Code
 ./open-vscode.sh --both       # Both (default)
 ```
 
-If VS Code shows "Select the container to attach", choose the matching container (e.g. **/opencode-unmetered-code** for `--opencode`) and it will open `/workspace`.
+## Cost
 
-This attaches VS Code to the running container. Use the integrated terminal
-to launch the agent.
+GPU rental (~$1.50/hr, 2× RTX Pro 6000 on [Vast.ai](https://cloud.vast.ai/?ref_id=399895)) vs per-token APIs:
 
-You can install the official VS Code extensions for a richer experience: [OpenCode](https://marketplace.visualstudio.com/items?itemName=sst-dev.opencode) and [Claude Code](https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code).
-
-**Option B — Direct terminal:**
-
-Three scripts run the agents in your terminal (each ensures the stack is up and `workspace` exists, then attaches to the container with `/workspace` as the working directory):
-
-| Script | What it does |
-|--------|----------------|
-| **`./opencode.sh`** | Starts the OpenCode agent. Interactive TUI; use for general coding tasks. |
-| **`./claude.sh`** | Starts Claude Code with MiniMax M2.5. Asks for permission when using tools (e.g. run commands, edit files). |
-| **`./claude-yolo.sh`** | Same as `claude.sh` but skips all permission prompts (`--dangerously-skip-permissions`). Faster for trusted use. |
-
-```bash
-./opencode.sh
-./claude.sh
-./claude-yolo.sh
-```
-
-You can pass extra arguments (e.g. `./claude.sh --verbose`); they are forwarded to the agent. Run from the repo root so `docker compose` finds the project.
-
-> Claude Code expects a model name registered in `litellm/config.yaml`.
-> The default config maps `claude-sonnet-4-6` to the llama-server
-> backend. Add more aliases there if Claude updates its default model name.
-
-### 10. Tear down
-
-When you're done, stop the local containers and destroy the Vast.ai
-instance to stop billing:
-
-```bash
-docker compose down      # stop local containers
-./destroy.sh             # terminate the Vast.ai instance and clean up
-```
-
-## VRAM Budget
-
-2× RTX Pro 6000 = **192 GB VRAM total** (96 GB each).
-
-| Quant | ~Size | Fits? | Notes |
-|-------|-------|-------|-------|
-| [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) | ~123 GB | Yes | Default — good quality, ~50 tok/s |
-| [UD-Q3_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) | ~101 GB | Yes | Smaller, slight quality loss |
-| [Q8_0](https://github.com/ggml-org/llama.cpp/blob/master/examples/quantize/README.md) | ~243 GB | No | Exceeds VRAM |
-
-For MiniMax M2.5 (230B MoE), the default [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quant fits
-comfortably in 192 GB with room for KV cache. Adjust `HF_REPO`,
-`HF_INCLUDE`, and `HF_QUANT` in `config.env` to use a different model
-or quantization.
-
-Smaller models like Qwen2.5-72B-Instruct fit easily at Q4_K_M (~42 GB).
-
-## Files
-
-```
-install.sh            One-shot installer (curl | bash): clone, configure, provision, connect
-config.env            Configuration (API key, model, server settings)
-provision.sh          Create Vast.ai instance
-connect.sh            Fetch SSH endpoint, write .env
-destroy.sh            Destroy Vast.ai instance
-compose.yaml          Local services (ssh-tunnel, LiteLLM, OpenCode, Claude, [SearXNG](https://github.com/searxng/searxng))
-ssh-tunnel/           SSH tunnel container (Dockerfile + entrypoint)
-litellm/config.yaml   LiteLLM proxy configuration
-config/opencode.json  OpenCode agent configuration
-opencode/             OpenCode container (Dockerfile + entrypoint)
-claude/               Claude Code container (Dockerfile + entrypoint)
-searxng/settings.yml  [SearXNG](https://github.com/searxng/searxng) config (free web search for agents)
-open-vscode.sh        Attach VS Code to agent containers
-opencode.sh           Run OpenCode agent in terminal
-claude.sh             Run Claude Code in terminal
-claude-yolo.sh        Run Claude Code with --dangerously-skip-permissions
-bench-agents.sh       Compare OpenCode vs Claude Code latency (use -p for parallel)
-bench.py              Benchmark script
-```
-
-## Troubleshooting
-
-**Build your own images:** To build images locally instead of pulling from GHCR (e.g. after changing Dockerfiles), first run may take several minutes:
-```bash
-docker compose -f compose.yaml -f compose.build.yaml up -d --build
-```
-
-**SSH tunnel not connecting:**
-```bash
-# Check tunnel container logs
-docker compose logs ssh-tunnel
-
-# Verify SSH access manually
-ssh -p <SSH_PORT> root@<PUBLIC_IP>
-
-# Check if your SSH key is registered with Vast.ai
-vastai show ssh-keys
-```
-
-**Server not responding after provision:**
-The model is likely still downloading. Check with:
-```bash
-vastai logs <INSTANCE_ID>
-```
-
-**Out of VRAM:**
-The model is too large for the GPU(s). Edit `config.env` to use a smaller
-quantization or a different model.
-
-**Claude Code: `InputValidationError` (Write failed — `file_path` / `content` missing):**  
-This is a [known issue](https://github.com/anthropics/claude-code/issues/895) when using **third-party APIs** (e.g. LiteLLM + MiniMax) instead of the official Anthropic API. The model sometimes returns tool calls with parameter names or structure that Claude Code does not accept. Workarounds: (1) Retry the request — often the next attempt works. (2) Ask the model to use Bash to write the file, e.g. “use a single bash command to write the file content”. (3) Use the OpenCode agent (`./opencode.sh`) for file-heavy tasks; it uses a different tool stack and is less affected.
-
-*Note on [Claude Code Router (CCR)](https://github.com/musistudio/claude-code-router):* CCR handles third-party providers via **transformers** that convert request/response formats (e.g. `anthropic` transformer: OpenAI ↔ Anthropic message format, including tool_use). It does **not** normalize Write tool parameter names: tool arguments are passed through as the model returns them (`parsedInput` in `anthropic.transformer.ts`), and `enhancetool` / `toolArgumentsParser` only repair malformed JSON (JSON5, jsonrepair), not rename `path`→`file_path` or `contents`→`content`. So using CCR in front of another provider does not fix this validation error; the same workarounds apply.
-
-**VS Code: "Cannot attach to the container … it no longer exists":**  
-The container was recreated (e.g. after `docker compose down`/`up` or a rebuild), so the window is still pointing at the old one. Click **Close Remote**, then run `./open-vscode.sh --opencode` or `--claude` again so VS Code attaches to the current container.
-
-**SSH into instance:**
-```bash
-vastai ssh-url <INSTANCE_ID>
-```
-
-## Cost Comparison
-
-Per-token API pricing (as of Feb 2026):
-
-| | Input ($/M tokens) | Output ($/M tokens) | Rate limits |
+| | Input ($/M) | Output ($/M) | Rate limits |
 |---|:---:|:---:|:---:|
-| **Claude Opus 4.6** | $5.00 | $25.00 | Yes |
-| **Claude Sonnet 4.6** | $3.00 | $15.00 | Yes |
-| **GPT-5.2** | $1.75 | $14.00 | Yes |
-| **[MiniMax M2.5 API](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.30 | $1.20 | Yes |
-| **[MiniMax M2.5 highspeed](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.60 | $2.40 | Yes |
-| **unmetered-code** | included* | ~$5.21* | **None** |
+| Claude Opus 4.6 | $5.00 | $25.00 | Yes |
+| Claude Sonnet 4.6 | $3.00 | $15.00 | Yes |
+| GPT-5.2 | $1.75 | $14.00 | Yes |
+| MiniMax M2.5 API | $0.30 | $1.20 | Yes |
+| MiniMax M2.5 highspeed | $0.60 | $2.40 | Yes |
+| **unmetered-code** | included | ~$5.21* | **None** |
 
-> **Note:** Effective output cost: ~$1.50/hr GPU × 1 hr ÷ (80 tok/s × 3600 s/hr) = $1.50 ÷ 0.288M tok ≈ `~$5.21/M`. (4 agents × ~20 tok/s ≈ 80 tok/s aggregate.)
->
-> Input is included — prompt eval at hundreds of tok/s doesn't reduce output throughput. Actual $/M depends on GPU utilization; idle time raises it.
+\* ~$1.50/hr ÷ 0.288M tok/hr (4 agents × 20 tok/s). Idle time raises effective cost.
 
-Prices from [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing) (base input/output; cache tiers and other modifiers on that page),
-[OpenAI](https://developers.openai.com/api/docs/pricing) (Standard tier), and
-[MiniMax](https://platform.minimax.io/docs/guides/pricing-paygo) (Pay as you go).
+## Teardown
 
-With unmetered-code you pay a flat GPU rental regardless of token use; it will not undercut the MiniMax API on price. The advantages are zero rate limits, 4 parallel agents, and full privacy — your code never leaves your network or the vast.ai host.
+```bash
+docker compose down   # stop local containers
+./destroy.sh          # terminate Vast.ai instance and stop billing
+```
+
+---
+
+[Setup Guide](docs/setup.md) · [Troubleshooting](docs/troubleshooting.md) · [Sponsor](https://github.com/sponsors/ymortazavi)
