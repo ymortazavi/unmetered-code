@@ -9,6 +9,7 @@
 set -euo pipefail
 
 REPO_URL="${UNMETERED_CODE_REPO:-https://github.com/ymortazavi/unmetered-code.git}"
+# Use $HOME (not /$HOME); expand once so we never pass a literal $HOME path to git
 DEFAULT_DIR="${UNMETERED_CODE_DIR:-$HOME/unmetered-code}"
 
 info()  { printf '\033[1;34m→ %s\033[0m\n' "$*"; }
@@ -78,8 +79,12 @@ fi
 INSTALL_DIR=""
 prompt INSTALL_DIR "Install directory" "$DEFAULT_DIR"
 INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+# Reject bogus paths (e.g. from stdin being script when run as curl|bash); use $HOME not /$HOME
+if [[ -z "$INSTALL_DIR" || "$INSTALL_DIR" == *'$HOME'* || "$INSTALL_DIR" == /\$HOME* ]]; then
+  INSTALL_DIR="$DEFAULT_DIR"
+fi
 INSTALL_DIR="$(cd -P "$(dirname "$INSTALL_DIR")" 2>/dev/null && pwd)/$(basename "$INSTALL_DIR")" || true
-if [[ -z "$INSTALL_DIR" ]]; then
+if [[ -z "$INSTALL_DIR" || "$INSTALL_DIR" == *'$HOME'* ]]; then
   INSTALL_DIR="$DEFAULT_DIR"
 fi
 
