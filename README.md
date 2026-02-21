@@ -398,17 +398,19 @@ Per-token API pricing (as of Feb 2026):
 
 | | Input ($/M tokens) | Output ($/M tokens) | Rate limits |
 |---|:---:|:---:|:---:|
+| **Claude Opus 4.6** | $5.00 | $25.00 | Yes |
 | **Claude Sonnet 4.6** | $3.00 | $15.00 | Yes |
-| **GPT-4o** | $2.50 | $10.00 | Yes |
+| **GPT-5.2** | $1.75 | $14.00 | Yes |
 | **[MiniMax M2.5 API](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.30 | $1.20 | Yes |
+| **[MiniMax M2.5 highspeed](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.60 | $2.40 | Yes |
 | **unmetered-code** | included* | ~$5.21* | **None** |
 
 > **Note:** Effective output cost: ~$1.50/hr GPU × 1 hr ÷ (80 tok/s × 3600 s/hr) = $1.50 ÷ 0.288M tok ≈ `~$5.21/M`. (4 agents × ~20 tok/s ≈ 80 tok/s aggregate.)
 >
 > Input is included — prompt eval at hundreds of tok/s doesn't reduce output throughput. Actual $/M depends on GPU utilization; idle time raises it.
 
-Prices from [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing),
-[OpenAI](https://platform.openai.com/docs/pricing), and
+Prices from [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing) (base input/output; cache tiers and other modifiers on that page),
+[OpenAI](https://developers.openai.com/api/docs/pricing) (Standard tier), and
 [MiniMax](https://platform.minimax.io/docs/guides/pricing-paygo) (Pay as you go).
 
 With unmetered-code you pay a flat GPU rental regardless of how many
