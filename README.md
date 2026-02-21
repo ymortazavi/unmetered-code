@@ -5,7 +5,7 @@
 
 **Private AI coding agents. No rate limits. ~$1.50/hr.**
 
-Run your favorite AI coders (currently supporting Claude Code and OpenCode)
+Run your favorite AI coders (currently supporting [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](https://github.com/anomalyco/opencode))
 with [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) on rented GPUs —
 no API keys, no per-token billing, no usage caps. Your code **never
 leaves your machine**. The model runs on a
