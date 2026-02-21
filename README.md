@@ -274,6 +274,8 @@ docker compose logs ssh-tunnel
 ./open-vscode.sh --both       # Both (default)
 ```
 
+If VS Code shows "Select the container to attach", choose the matching container (e.g. **/opencode-unmetered-code** for `--opencode`) and it will open `/workspace`.
+
 This attaches VS Code to the running container. Use the integrated terminal
 to launch the agent.
 
@@ -382,6 +384,9 @@ quantization or a different model.
 This is a [known issue](https://github.com/anthropics/claude-code/issues/895) when using **third-party APIs** (e.g. LiteLLM + MiniMax) instead of the official Anthropic API. The model sometimes returns tool calls with parameter names or structure that Claude Code does not accept. Workarounds: (1) Retry the request — often the next attempt works. (2) Ask the model to use Bash to write the file, e.g. “use a single bash command to write the file content”. (3) Use the OpenCode agent (`./opencode.sh`) for file-heavy tasks; it uses a different tool stack and is less affected.
 
 *Note on [Claude Code Router (CCR)](https://github.com/musistudio/claude-code-router):* CCR handles third-party providers via **transformers** that convert request/response formats (e.g. `anthropic` transformer: OpenAI ↔ Anthropic message format, including tool_use). It does **not** normalize Write tool parameter names: tool arguments are passed through as the model returns them (`parsedInput` in `anthropic.transformer.ts`), and `enhancetool` / `toolArgumentsParser` only repair malformed JSON (JSON5, jsonrepair), not rename `path`→`file_path` or `contents`→`content`. So using CCR in front of another provider does not fix this validation error; the same workarounds apply.
+
+**VS Code: "Cannot attach to the container … it no longer exists":**  
+The container was recreated (e.g. after `docker compose down`/`up` or a rebuild), so the window is still pointing at the old one. Click **Close Remote**, then run `./open-vscode.sh --opencode` or `--claude` again so VS Code attaches to the current container.
 
 **SSH into instance:**
 ```bash
