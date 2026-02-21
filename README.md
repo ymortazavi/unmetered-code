@@ -277,6 +277,8 @@ If VS Code shows "Select the container to attach", choose the matching container
 This attaches VS Code to the running container. Use the integrated terminal
 to launch the agent.
 
+You can install the official VS Code extensions for a richer experience: [OpenCode](https://marketplace.visualstudio.com/items?itemName=sst-dev.opencode) and [Claude Code](https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code).
+
 **Option B — Direct terminal:**
 
 Three scripts run the agents in your terminal (each ensures the stack is up and `workspace` exists, then attaches to the container with `/workspace` as the working directory):
