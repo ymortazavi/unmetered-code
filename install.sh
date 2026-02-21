@@ -20,13 +20,13 @@ prompt() {
   local var="$1" prompt_text="$2" default="${3:-}"
   if [[ -n "$default" ]]; then
     printf '\033[1;36m%s\033[0m [%s]: ' "$prompt_text" "$default"
-    read -r "$var"
+    read -r "$var" < /dev/tty
     if [[ -z "${!var}" ]]; then
       printf -v "$var" '%s' "$default"
     fi
   else
     printf '\033[1;36m%s\033[0m: ' "$prompt_text"
-    read -r "$var"
+    read -r "$var" < /dev/tty
   fi
 }
 
@@ -35,7 +35,7 @@ yesno() {
   local y="y/N"
   [[ "$default" =~ ^[yY] ]] && y="Y/n"
   printf '\033[1;36m%s\033[0m [%s]: ' "$prompt_text" "$y"
-  read -r ans
+  read -r ans < /dev/tty
   case "${ans:-$default}" in
     [yY]|[yY][eE][sS]) return 0 ;;
     *) return 1 ;;
