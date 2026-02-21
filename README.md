@@ -161,7 +161,7 @@ want faster downloads, uncomment the `HF_TOKEN` line and set it:
 3. Uncomment and set the token in `config.env`:
 
 ```bash
-HF_TOKEN="hf_your_token_here"
+HF_TOKEN="your_hf_token_here"
 ```
 
 If the line is commented out or set to `"none"`, HuggingFace authentication
