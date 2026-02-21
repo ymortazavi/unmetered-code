@@ -226,17 +226,45 @@ info "Connecting SSH tunnel and waiting for model (5–10 min first time)..."
 
 # ─── Docker Compose ────────────────────────────────────
 
-info "Starting local stack (docker compose up -d)..."
-docker compose up -d || fail "docker compose up failed"
+echo
+echo "How do you want to start the local stack?"
+echo "  1) Pull pre-built images (faster)"
+echo "     docker compose up -d"
+echo "  2) Build from source (needed for Apple Silicon / custom changes)"
+echo "     docker compose -f compose.yaml -f compose.build.yaml up -d --build"
+echo
+prompt BUILD_CHOICE "Choose [1/2]" "1"
+case "${BUILD_CHOICE}" in
+  2)
+    info "Building and starting local stack (this may take a few minutes on first run)..."
+    docker compose -f compose.yaml -f compose.build.yaml up -d --build || fail "docker compose build failed"
+    ;;
+  *)
+    info "Starting local stack (pulling pre-built images)..."
+    docker compose up -d || fail "docker compose up failed"
+    ;;
+esac
 ok "Stack is up"
+
+# ─── Launch agent ─────────────────────────────────────
+
+echo
+echo "How do you want to use the agents?"
+echo "  1) Terminal: OpenCode         ./opencode.sh"
+echo "  2) Terminal: Claude Code      ./claude.sh"
+echo "  3) Terminal: Claude (YOLO)    ./claude-yolo.sh"
+echo "  4) VS Code: OpenCode          ./open-vscode.sh --opencode"
+echo "  5) VS Code: Claude Code       ./open-vscode.sh --claude"
+echo "  6) VS Code: Both              ./open-vscode.sh --both"
+echo "  7) Skip — I'll launch manually"
+echo
+prompt AGENT_CHOICE "Choose [1-7]" "7"
 
 # ─── Success + DESTROY reminder ────────────────────────
 
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-ok "Setup complete. You can run agents with:"
-echo "  ./opencode.sh   or   ./claude.sh"
-echo "  See README for VS Code: ./open-vscode.sh --both"
+ok "Setup complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
 echo
@@ -259,3 +287,13 @@ printf '\033[0m'
 echo
 echo "Save the command above. You are being billed until the instance is destroyed."
 echo
+
+case "${AGENT_CHOICE}" in
+  1) exec ./opencode.sh ;;
+  2) exec ./claude.sh ;;
+  3) exec ./claude-yolo.sh ;;
+  4) exec ./open-vscode.sh --opencode ;;
+  5) exec ./open-vscode.sh --claude ;;
+  6) exec ./open-vscode.sh --both ;;
+  *) echo "Run agents anytime:  ./opencode.sh  ./claude.sh  ./open-vscode.sh --both" ;;
+esac
