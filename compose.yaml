@@ -46,6 +46,7 @@ services:
     volumes:
       - ./workspace:/workspace:rw
       - ./config:/config:ro
+      - opencode-home:/home/node
     working_dir: /workspace
     depends_on:
       litellm:
@@ -109,3 +110,4 @@ services:
 
 volumes:
   claude-home:
+  opencode-home:

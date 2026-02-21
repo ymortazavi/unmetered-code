@@ -52,15 +52,15 @@ Both agent containers come with full development environments:
 
 | Tool | Claude Code | OpenCode | Notes |
 |------|:-----------:|:--------:|-------|
-| Node.js | 24.x LTS | 22.x | npm included |
-| Python | 3.13.x | 3.12.x | pip, venv, dev headers |
+| Node.js | 24.x LTS | 24.x LTS | npm included |
+| Python | 3.13.x | 3.13.x | pip, venv, dev headers |
 | Rust | stable | stable | installed via rustup, cargo included |
 | C/C++ | gcc, g++ | gcc, g++ | make, cmake included |
 | Utilities | git, ripgrep, fd, jq, vim, tree | same | standard dev tools |
 
-OpenCode versions depend on its upstream Alpine base image. Both
-containers share a `/workspace` volume, so files created by one agent
-are immediately visible to the other.
+Both agent containers use the same Debian-based dev stack. They share a
+`/workspace` volume, so files created by one agent are immediately
+visible to the other.
 
 
 ## Prerequisites
