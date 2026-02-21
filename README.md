@@ -1,5 +1,7 @@
 # unmetered-code
 
+[![CI/CD](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml/badge.svg)](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml)
+
 **Private AI coding agents. No rate limits. ~$1.50/hr.**
 
 Run your favorite AI coders (currently supporting Claude Code and OpenCode)
