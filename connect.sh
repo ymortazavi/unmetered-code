@@ -234,5 +234,29 @@ echo
 echo "  View logs:"
 echo "    vastai logs ${INSTANCE_ID}"
 echo "    (or run connect.sh with -v to show recent logs)"
+echo
+echo "  Run agents:"
+echo "    ./opencode.sh          OpenCode agent"
+echo "    ./claude.sh            Claude Code"
+echo "    ./claude-yolo.sh       Claude Code (--dangerously-skip-permissions)"
+echo "    ./open-vscode.sh --opencode   VS Code: OpenCode"
+echo "    ./open-vscode.sh --claude     VS Code: Claude Code"
+echo "    ./open-vscode.sh --both       VS Code: Both"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo
+printf '\033[1;31m'
+echo "═══════════════════════════════════════════════════════════════════════"
+echo "  TO STOP BILLING — Destroy the Vast.ai instance when you're done"
+echo "═══════════════════════════════════════════════════════════════════════"
+echo
+echo "  Instance ID: ${INSTANCE_ID}"
+echo
+echo "  Destroy instance and stop charges:"
+echo "    ./destroy.sh"
+echo
+echo "  Or from anywhere:  vastai destroy instance ${INSTANCE_ID}"
+echo
+echo "  Manage instances:  https://cloud.vast.ai/instances/"
+echo "═══════════════════════════════════════════════════════════════════════"
+printf '\033[0m'
 echo
