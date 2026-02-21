@@ -397,12 +397,9 @@ Per-token API pricing (as of Feb 2026):
 | **Claude Sonnet 4.6** | $3.00 | $15.00 | Yes |
 | **GPT-4o** | $2.50 | $10.00 | Yes |
 | **[MiniMax M2.5 API](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.30 | $1.20 | Yes |
-| **unmetered-code** | included\* | ~$5.21\* | **None** |
+| **unmetered-code** | included* | ~$5.21* | **None** |
 
-\*Effective output cost: ~$1.50/hr GPU × 1 hr ÷ (80 tok/s × 3600 s/hr) =
-$1.50 ÷ 0.288M tok ≈ $5.21/M. (4 agents × ~20 tok/s ≈ 80 tok/s aggregate.)
-Input is included — prompt eval at hundreds of tok/s doesn't reduce output
-throughput. Actual $/M depends on GPU utilization; idle time raises it.
+> **Note:** Effective output cost: ~$1.50/hr GPU × 1 hr ÷ (80 tok/s × 3600 s/hr) = $1.50 ÷ 0.288M tok ≈ $5.21/M. (4 agents × ~20 tok/s ≈ 80 tok/s aggregate.) Input is included — prompt eval at hundreds of tok/s doesn't reduce output throughput. Actual $/M depends on GPU utilization; idle time raises it.
 
 Prices from [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing),
 [OpenAI](https://platform.openai.com/docs/pricing), and
