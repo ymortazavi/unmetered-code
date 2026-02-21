@@ -132,6 +132,18 @@ visible to the other.
 
 ## Quick Start
 
+### Option A — One-shot install (curl → CLI → full setup)
+
+One script downloads the repo, asks for your Vast API key (and optional HuggingFace token), finds a GPU offer, provisions the instance, connects the tunnel, and starts Docker. **Before it exits, it prints clear instructions on how to destroy the Vast instance to stop billing.**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/ymortazavi/unmetered-code/main/install.sh | bash
+```
+
+You will be prompted for: install directory (default `~/unmetered-code`), Vast.ai API key, optional HuggingFace token, SSH key registration, and an OFFER_ID (the script runs `vastai search offers` and shows a table so you can paste an ID). When done, **save the destroy command** the script prints so you can stop billing when finished.
+
+### Option B — Manual steps
+
 ### 1. Clone the repo
 
 ```bash
@@ -331,6 +343,7 @@ Smaller models like Qwen2.5-72B-Instruct fit easily at Q4_K_M (~42 GB).
 ## Files
 
 ```
+install.sh            One-shot installer (curl | bash): clone, configure, provision, connect
 config.env            Configuration (API key, model, server settings)
 provision.sh          Create Vast.ai instance
 connect.sh            Fetch SSH endpoint, write .env
