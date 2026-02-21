@@ -21,13 +21,13 @@ prompt() {
   local var="$1" prompt_text="$2" default="${3:-}"
   if [[ -n "$default" ]]; then
     printf '\033[1;36m%s\033[0m [%s]: ' "$prompt_text" "$default"
-    read -r "$var" < /dev/tty
+    read -r "${var?}" < /dev/tty
     if [[ -z "${!var}" ]]; then
       printf -v "$var" '%s' "$default"
     fi
   else
     printf '\033[1;36m%s\033[0m: ' "$prompt_text"
-    read -r "$var" < /dev/tty
+    read -r "${var?}" < /dev/tty
   fi
 }
 
