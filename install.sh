@@ -250,15 +250,34 @@ ok "Stack is up"
 
 echo
 echo "How do you want to use the agents?"
-echo "  1) Terminal: OpenCode         ./opencode.sh"
-echo "  2) Terminal: Claude Code      ./claude.sh"
-echo "  3) Terminal: Claude (YOLO)    ./claude-yolo.sh"
-echo "  4) VS Code: OpenCode          ./open-vscode.sh --opencode"
-echo "  5) VS Code: Claude Code       ./open-vscode.sh --claude"
-echo "  6) VS Code: Both              ./open-vscode.sh --both"
+echo "  1) Terminal: OpenCode         ./umcode opencode"
+echo "  2) Terminal: Claude Code      ./umcode claude"
+echo "  3) Terminal: Claude (YOLO)    ./umcode claude --yolo"
+echo "  4) VS Code: OpenCode          ./umcode vscode --opencode"
+echo "  5) VS Code: Claude Code       ./umcode vscode --claude"
+echo "  6) VS Code: Both              ./umcode vscode --both"
 echo "  7) Skip — I'll launch manually"
 echo
 prompt AGENT_CHOICE "Choose [1-7]" "7"
+
+# ─── Add umcode to PATH (optional) ─────────────────────
+
+if yesno "Add umcode to your PATH (symlink in ~/.local/bin so you can run 'umcode' from anywhere)?" "y"; then
+  LOCAL_BIN="${HOME}/.local/bin"
+  mkdir -p "$LOCAL_BIN"
+  if ln -sf "${INSTALL_DIR}/umcode" "${LOCAL_BIN}/umcode" 2>/dev/null; then
+    ok "Symlinked umcode to ${LOCAL_BIN}/umcode"
+    if ! echo ":$PATH:" | grep -q ":${LOCAL_BIN}:"; then
+      echo ""
+      echo "  Add to your shell config (~/.bashrc or ~/.zshrc):"
+      echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+      echo ""
+      echo "  Then run:  exec \$SHELL   (or open a new terminal)"
+    fi
+  else
+    warn "Could not create symlink. Add manually:  ln -sf \"${INSTALL_DIR}/umcode\" ~/.local/bin/umcode"
+  fi
+fi
 
 # ─── Success + DESTROY reminder ────────────────────────
 
@@ -277,7 +296,8 @@ echo ""
 echo "  Instance ID: ${INSTANCE_ID}"
 echo ""
 echo "  Destroy instance and stop charges:"
-echo "    cd \"$INSTALL_DIR\" && ./destroy.sh"
+echo "    cd \"$INSTALL_DIR\" && ./umcode destroy"
+echo "  (or: ./destroy.sh)"
 echo ""
 echo "  Or from anywhere:  vastai destroy instance ${INSTANCE_ID}"
 echo ""
@@ -295,5 +315,5 @@ case "${AGENT_CHOICE}" in
   4) exec ./open-vscode.sh --opencode ;;
   5) exec ./open-vscode.sh --claude ;;
   6) exec ./open-vscode.sh --both ;;
-  *) echo "Run agents anytime:  ./opencode.sh  ./claude.sh  ./open-vscode.sh --both" ;;
+  *) echo "Run agents anytime:  ./umcode opencode  ./umcode claude  ./umcode vscode --both" ;;
 esac

@@ -27,6 +27,9 @@ jobs:
           scandir: .
           severity: warning
 
+      - name: Verify umcode CLI
+        run: ./umcode --help
+
   ruff:
     name: Python lint
     runs-on: ubuntu-latest

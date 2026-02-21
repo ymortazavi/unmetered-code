@@ -35,12 +35,12 @@ This is a [known issue](https://github.com/anthropics/claude-code/issues/895) wh
 
 1. Retry the request — often the next attempt succeeds.
 2. Ask the model to use Bash instead: "use a single bash command to write the file content".
-3. Use the OpenCode agent (`./opencode.sh`) for file-heavy tasks; it uses a different tool stack and is less affected.
+3. Use the OpenCode agent (`umcode opencode` or `./opencode.sh`) for file-heavy tasks; it uses a different tool stack and is less affected.
 
 > Note on [Claude Code Router (CCR)](https://github.com/musistudio/claude-code-router): CCR does not normalize Write tool parameter names (`path`→`file_path`, `contents`→`content`). Its `enhancetool`/`toolArgumentsParser` only repairs malformed JSON, not renames parameters. Using CCR in front of another provider does not fix this error; the same workarounds apply.
 
 **VS Code: "Cannot attach to the container … it no longer exists":**
-The container was recreated (e.g. after `docker compose down`/`up` or a rebuild). Click **Close Remote**, then run `./open-vscode.sh --opencode` or `--claude` again to attach to the current container.
+The container was recreated (e.g. after `docker compose down`/`up` or a rebuild). Click **Close Remote**, then run `umcode vscode --opencode` or `umcode vscode --claude` (or `./open-vscode.sh --opencode` / `--claude`) again to attach to the current container.
 
 **SSH into the Vast.ai instance directly:**
 

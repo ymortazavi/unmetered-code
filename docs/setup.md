@@ -24,7 +24,7 @@
 ### Optional
 
 - **HuggingFace token** — only needed for gated/private models. The default model ([unsloth/MiniMax-M2.5-GGUF](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF)) is public. A token can also give faster downloads. Set `HF_TOKEN` in `config.env` if needed.
-- **VS Code** with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension — required only for `./open-vscode.sh`.
+- **VS Code** with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension — required only for `umcode vscode` (or `./open-vscode.sh`).
 
 ---
 
@@ -59,12 +59,12 @@ If unset or `"none"`, HuggingFace authentication is skipped — the default publ
 vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph
 ```
 
-The **ID** column is what you pass to `provision.sh`. For the default MiniMax M2.5 at UD-Q4_K_XL quantization, you need at least **192 GB VRAM** (e.g. 2× RTX Pro 6000). See [VRAM Budget](#vram-budget) below.
+The **ID** column is what you pass to `umcode provision`. For the default MiniMax M2.5 at UD-Q4_K_XL quantization, you need at least **192 GB VRAM** (e.g. 2× RTX Pro 6000). See [VRAM Budget](#vram-budget) below.
 
 ### 4. Provision the remote instance
 
 ```bash
-./provision.sh <OFFER_ID>
+./umcode provision <OFFER_ID>
 ```
 
 Creates a Vast.ai instance that downloads the model and starts `llama-server`. The script waits for the instance to reach `running` state, then prints next steps. Model download takes 5–10 minutes.
@@ -74,7 +74,7 @@ Creates a Vast.ai instance that downloads the model and starts `llama-server`. T
 ### 5. Connect the SSH tunnel
 
 ```bash
-./connect.sh
+./umcode connect
 ```
 
 Fetches the instance's public IP and SSH port, tests the connection, and writes a `.env` file with tunnel parameters for Docker Compose. If SSH isn't ready yet, re-run after a minute or two.
@@ -118,18 +118,20 @@ docker compose logs ssh-tunnel
 **Optional — compare agent latency:**
 
 ```bash
-./bench-agents.sh "hi"                                              # sequential
-./bench-agents.sh -p "hi"                                           # parallel
-./bench-agents.sh -p "build a simple terminal snake app in Python"  # tool calls
-./bench-agents.sh -p "report high/low/open/close for SPY today"     # web search
+./umcode bench "hi"                                              # sequential
+./umcode bench -p "hi"                                           # parallel
+./umcode bench -p "build a simple terminal snake app in Python"  # tool calls
+./umcode bench -p "report high/low/open/close for SPY today"     # web search
 ```
 
 ### 8. Tear down
 
 ```bash
-docker compose down   # stop local containers
-./destroy.sh          # terminate Vast.ai instance and stop billing
+docker compose down      # stop local containers
+./umcode destroy         # terminate Vast.ai instance and stop billing
 ```
+
+(You can also run the scripts directly: `./provision.sh`, `./connect.sh`, `./destroy.sh`, `./bench-agents.sh`.)
 
 ---
 
@@ -172,12 +174,16 @@ Both containers share a `/workspace` volume — files created by one agent are i
 
 ## Files
 
+**CLI entry point:** Run `./umcode --help` for usage. All commands below are available as `umcode <subcommand>`. You can run `umcode` from any directory by adding it to your PATH: `mkdir -p ~/.local/bin && ln -sf /path/to/umcode/umcode ~/.local/bin/umcode`, then add `export PATH="$HOME/.local/bin:$PATH"` to your shell config (see the main [README](../README.md)). The script always uses the install directory for config, Docker, and `.instance_id`. Optionally set `UMCODE_DIR` to the repo path if the script cannot resolve it.
+
 ```
+umcode                Main CLI (dispatcher); subcommands: start, provision, connect, destroy, opencode, claude, vscode, bench
+start.sh              Rent, provision, connect, and start stack (umcode start)
 install.sh            One-shot installer (curl | bash): clone, configure, provision, connect
 config.env            Configuration (API key, model, server settings)
-provision.sh          Create Vast.ai instance
-connect.sh            Fetch SSH endpoint, write .env
-destroy.sh            Destroy Vast.ai instance
+provision.sh          Create Vast.ai instance (umcode provision)
+connect.sh            Fetch SSH endpoint, write .env (umcode connect)
+destroy.sh            Destroy Vast.ai instance (umcode destroy)
 compose.yaml          Local services (ssh-tunnel, LiteLLM, OpenCode, Claude, SearXNG)
 ssh-tunnel/           SSH tunnel container (Dockerfile + entrypoint)
 litellm/config.yaml   LiteLLM proxy configuration
@@ -185,10 +191,10 @@ config/opencode.json  OpenCode agent configuration
 opencode/             OpenCode container (Dockerfile + entrypoint)
 claude/               Claude Code container (Dockerfile + entrypoint)
 searxng/settings.yml  SearXNG config (free web search for agents)
-open-vscode.sh        Attach VS Code to agent containers
-opencode.sh           Run OpenCode agent in terminal
-claude.sh             Run Claude Code in terminal
-claude-yolo.sh        Run Claude Code with --dangerously-skip-permissions
-bench-agents.sh       Compare OpenCode vs Claude Code latency (use -p for parallel)
+open-vscode.sh        Attach VS Code to agent containers (umcode vscode)
+opencode.sh           Run OpenCode agent in terminal (umcode opencode)
+claude.sh             Run Claude Code in terminal (umcode claude)
+claude-yolo.sh        Claude with --dangerously-skip-permissions (umcode claude --yolo)
+bench-agents.sh       Compare OpenCode vs Claude Code latency (umcode bench, use -p for parallel)
 bench.py              Benchmark script
 ```
