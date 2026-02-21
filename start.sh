@@ -25,7 +25,7 @@ if [[ -f "${SCRIPT_DIR}/.instance_id" ]]; then
   info "Using existing instance ${INSTANCE_ID}"
 else
   echo
-  info "Searching for GPU offers (2× RTX Pro 6000, ~192GB VRAM)..."
+  info "GPU offers (2× RTX Pro 6000)..."
   "${SCRIPT_DIR}/scripts/select-offer.sh" || fail "Offer selection failed"
   OFFER_ID=$(cat "${SCRIPT_DIR}/.selected_offer" 2>/dev/null)
   rm -f "${SCRIPT_DIR}/.selected_offer"
