@@ -29,10 +29,12 @@ def filler_text(target_tokens: int) -> str:
 
 def check_server(base_url: str) -> str | None:
     try:
-        payload = json.dumps({
-            "messages": [{"role": "user", "content": "hi"}],
-            "max_tokens": 1,
-        }).encode()
+        payload = json.dumps(
+            {
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 1,
+            }
+        ).encode()
         req = urllib.request.Request(
             f"{base_url}/v1/chat/completions",
             data=payload,
@@ -48,15 +50,17 @@ def check_server(base_url: str) -> str | None:
 def run_point(base_url: str, target_ctx: int, gen_tokens: int) -> dict:
     filler = filler_text(target_ctx)
 
-    payload = json.dumps({
-        "messages": [
-            {"role": "system", "content": filler},
-            {"role": "user", "content": "Count from 1 to 100, one number per line."},
-        ],
-        "max_tokens": gen_tokens,
-        "temperature": 0.0,
-        "stream": True,
-    }).encode()
+    payload = json.dumps(
+        {
+            "messages": [
+                {"role": "system", "content": filler},
+                {"role": "user", "content": "Count from 1 to 100, one number per line."},
+            ],
+            "max_tokens": gen_tokens,
+            "temperature": 0.0,
+            "stream": True,
+        }
+    ).encode()
 
     req = urllib.request.Request(
         f"{base_url}/v1/chat/completions",
@@ -138,15 +142,19 @@ def main() -> None:
         description="Benchmark llama-server throughput at various context lengths",
     )
     parser.add_argument(
-        "--url", default="http://localhost:8080",
+        "--url",
+        default="http://localhost:8080",
         help="Server base URL (default: http://localhost:8080)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Save results to a JSON file",
     )
     parser.add_argument(
-        "--gen-tokens", type=int, default=GEN_TOKENS,
+        "--gen-tokens",
+        type=int,
+        default=GEN_TOKENS,
         help=f"Tokens to generate per test (default: {GEN_TOKENS})",
     )
     args = parser.parse_args()
@@ -180,8 +188,12 @@ def main() -> None:
 
     col = "  {ctx:>10}  │ {prompt:>10}  │ {ttft:>8}  │ {ptps:>12}  │ {gtps:>10}  │ {total:>8}"
     hdr = col.format(
-        ctx="Context", prompt="Prompt", ttft="TTFT",
-        ptps="Prompt tok/s", gtps="Gen tok/s", total="Total",
+        ctx="Context",
+        prompt="Prompt",
+        ttft="TTFT",
+        ptps="Prompt tok/s",
+        gtps="Gen tok/s",
+        total="Total",
     )
     sep = "  " + "─" * (len(hdr) - 2)
 
@@ -224,7 +236,9 @@ def main() -> None:
         avg_gen = sum(r["gen_tps"] for r in ok) / len(ok)
         min_gen = min(r["gen_tps"] for r in ok)
         max_gen = max(r["gen_tps"] for r in ok)
-        print(f"  Generation speed:  avg {avg_gen:.1f}  min {min_gen:.1f}  max {max_gen:.1f}  tok/s")
+        print(
+            f"  Generation speed:  avg {avg_gen:.1f}  min {min_gen:.1f}  max {max_gen:.1f}  tok/s"
+        )
         print(f"  Model:  {model}")
         print(f"  Date:   {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         print()

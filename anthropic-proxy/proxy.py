@@ -10,11 +10,10 @@ a correct Anthropic SSE stream.
 import json
 import os
 import sys
-import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
-from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 UPSTREAM = os.environ.get("UPSTREAM", "http://litellm:4000")
 
@@ -42,8 +41,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             body = json.dumps(data).encode()
 
         headers = {}
-        for key in ("content-type", "x-api-key", "anthropic-version",
-                     "authorization", "accept"):
+        for key in ("content-type", "x-api-key", "anthropic-version", "authorization", "accept"):
             val = self.headers.get(key)
             if val:
                 headers[key] = val
@@ -85,60 +83,96 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self.wfile.write(f"data: {json.dumps(data)}\n\n".encode())
             self.wfile.flush()
 
-        sse({
-            "type": "message_start",
-            "message": {
-                "id": msg.get("id", ""),
-                "type": "message",
-                "role": "assistant",
-                "model": msg.get("model", ""),
-                "content": [],
-                "stop_reason": None,
-                "stop_sequence": None,
-                "usage": {"input_tokens": msg.get("usage", {}).get("input_tokens", 0),
-                          "output_tokens": 0},
+        sse(
+            {
+                "type": "message_start",
+                "message": {
+                    "id": msg.get("id", ""),
+                    "type": "message",
+                    "role": "assistant",
+                    "model": msg.get("model", ""),
+                    "content": [],
+                    "stop_reason": None,
+                    "stop_sequence": None,
+                    "usage": {
+                        "input_tokens": msg.get("usage", {}).get("input_tokens", 0),
+                        "output_tokens": 0,
+                    },
+                },
             }
-        })
+        )
 
         for idx, block in enumerate(msg.get("content", [])):
             btype = block.get("type")
 
             if btype == "thinking":
-                sse({"type": "content_block_start", "index": idx,
-                     "content_block": {"type": "thinking", "thinking": ""}})
+                sse(
+                    {
+                        "type": "content_block_start",
+                        "index": idx,
+                        "content_block": {"type": "thinking", "thinking": ""},
+                    }
+                )
                 text = block.get("thinking", "")
                 if text:
-                    sse({"type": "content_block_delta", "index": idx,
-                         "delta": {"type": "thinking_delta", "thinking": text}})
+                    sse(
+                        {
+                            "type": "content_block_delta",
+                            "index": idx,
+                            "delta": {"type": "thinking_delta", "thinking": text},
+                        }
+                    )
                 sse({"type": "content_block_stop", "index": idx})
 
             elif btype == "text":
-                sse({"type": "content_block_start", "index": idx,
-                     "content_block": {"type": "text", "text": ""}})
+                sse(
+                    {
+                        "type": "content_block_start",
+                        "index": idx,
+                        "content_block": {"type": "text", "text": ""},
+                    }
+                )
                 text = block.get("text", "")
                 if text:
-                    sse({"type": "content_block_delta", "index": idx,
-                         "delta": {"type": "text_delta", "text": text}})
+                    sse(
+                        {
+                            "type": "content_block_delta",
+                            "index": idx,
+                            "delta": {"type": "text_delta", "text": text},
+                        }
+                    )
                 sse({"type": "content_block_stop", "index": idx})
 
             elif btype == "tool_use":
-                sse({"type": "content_block_start", "index": idx,
-                     "content_block": {"type": "tool_use",
-                                       "id": block.get("id", ""),
-                                       "name": block.get("name", ""),
-                                       "input": {}}})
+                sse(
+                    {
+                        "type": "content_block_start",
+                        "index": idx,
+                        "content_block": {
+                            "type": "tool_use",
+                            "id": block.get("id", ""),
+                            "name": block.get("name", ""),
+                            "input": {},
+                        },
+                    }
+                )
                 inp = block.get("input", {})
-                sse({"type": "content_block_delta", "index": idx,
-                     "delta": {"type": "input_json_delta",
-                               "partial_json": json.dumps(inp)}})
+                sse(
+                    {
+                        "type": "content_block_delta",
+                        "index": idx,
+                        "delta": {"type": "input_json_delta", "partial_json": json.dumps(inp)},
+                    }
+                )
                 sse({"type": "content_block_stop", "index": idx})
 
-        sse({
-            "type": "message_delta",
-            "delta": {"stop_reason": msg.get("stop_reason", "end_turn"),
-                      "stop_sequence": None},
-            "usage": {"output_tokens": msg.get("usage", {}).get("output_tokens", 0)}
-        })
+        sse(
+            {
+                "type": "message_delta",
+                "delta": {"stop_reason": msg.get("stop_reason", "end_turn"), "stop_sequence": None},
+                "usage": {"output_tokens": msg.get("usage", {}).get("output_tokens", 0)},
+            }
+        )
         sse({"type": "message_stop"})
 
     def log_message(self, fmt, *args):
