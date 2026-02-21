@@ -45,7 +45,7 @@ yesno() {
 
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  umcode — one-shot installer"
+echo "  umcode installer"
 echo "  Unmetered private AI coding agents on Vast.ai (~\$1.50/hr)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
@@ -206,11 +206,10 @@ fi
 
 echo
 info "Searching for GPU offers (2× RTX Pro 6000, ~192GB VRAM)..."
-echo
-vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph 2>/dev/null | head -15
-echo
-prompt OFFER_ID "Paste OFFER_ID from the table above (first column)" ""
-[[ -z "${OFFER_ID:-}" ]] && fail "OFFER_ID is required to provision. Re-run and paste an ID from: vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph"
+./scripts/select-offer.sh || fail "Offer selection failed"
+OFFER_ID=$(cat .selected_offer 2>/dev/null)
+rm -f .selected_offer
+[[ -z "${OFFER_ID:-}" ]] && fail "No offer selected."
 
 info "Provisioning Vast.ai instance (this may take a few minutes)..."
 ./provision.sh "$OFFER_ID" || fail "provision.sh failed"

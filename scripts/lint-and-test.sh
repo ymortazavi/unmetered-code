@@ -20,6 +20,7 @@ if command -v shellcheck &>/dev/null; then
   if shellcheck --severity=warning \
     umcode install.sh start.sh provision.sh connect.sh destroy.sh \
     opencode.sh claude.sh claude-yolo.sh open-vscode.sh bench-agents.sh \
+    scripts/select-offer.sh \
     ssh-tunnel/entrypoint.sh opencode/entrypoint.sh claude/entrypoint.sh 2>&1; then
     echo "  shellcheck OK"
   else

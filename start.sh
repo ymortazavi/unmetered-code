@@ -26,12 +26,10 @@ if [[ -f "${SCRIPT_DIR}/.instance_id" ]]; then
 else
   echo
   info "Searching for GPU offers (2× RTX Pro 6000, ~192GB VRAM)..."
-  echo
-  vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph 2>/dev/null | head -15
-  echo
-  printf '\033[1;36mPaste OFFER_ID from the table above (first column)\033[0m: '
-  read -r OFFER_ID < /dev/tty
-  [[ -z "${OFFER_ID:-}" ]] && fail "OFFER_ID is required. Re-run and paste an ID from the table."
+  "${SCRIPT_DIR}/scripts/select-offer.sh" || fail "Offer selection failed"
+  OFFER_ID=$(cat "${SCRIPT_DIR}/.selected_offer" 2>/dev/null)
+  rm -f "${SCRIPT_DIR}/.selected_offer"
+  [[ -z "${OFFER_ID:-}" ]] && fail "No offer selected."
   info "Provisioning Vast.ai instance (this may take a few minutes)..."
   "${SCRIPT_DIR}/provision.sh" "$OFFER_ID" || fail "provision failed"
   INSTANCE_ID=$(cat "${SCRIPT_DIR}/.instance_id")
