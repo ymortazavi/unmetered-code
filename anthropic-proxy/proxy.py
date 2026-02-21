@@ -40,8 +40,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             body = json.dumps(data).encode()
 
         headers = {}
-        for key in ("content-type", "x-api-key", "anthropic-version",
-                     "authorization", "accept"):
+        for key in ("content-type", "x-api-key", "anthropic-version", "authorization", "accept"):
             val = self.headers.get(key)
             if val:
                 headers[key] = val

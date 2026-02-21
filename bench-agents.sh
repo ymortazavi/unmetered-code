@@ -13,15 +13,26 @@
 set -e
 cd "$(dirname "$0")"
 
-# Colors
+# Colors and styling
 c_cyan='\033[1;36m'
+# shellcheck disable=SC2034  # used in printf for "✓ Benchmark complete"
 c_green='\033[1;32m'
 c_yellow='\033[1;33m'
 c_red='\033[1;31m'
+c_dim='\033[2m'
+c_time='\033[1;35m'   # magenta for elapsed time
 c_reset='\033[0m'
-header() { printf "${c_cyan}%s${c_reset}\n" "$*"; }
-warn()   { printf "${c_yellow}%s${c_reset}\n" "$*" >&2; }
-fail()   { printf "${c_red}%s${c_reset}\n" "$*" >&2; exit 1; }
+rule="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+header()  { printf '%b\n' "${c_cyan}$*${c_reset}"; }
+warn()    { printf '%b\n' "${c_yellow}$*${c_reset}" >&2; }
+fail()    { printf '%b\n' "${c_red}$*${c_reset}" >&2; exit 1; }
+box()     { printf '%b\n' "  ${c_cyan}┌─ $1 ─${rule:0:$((44-${#1}))}┐${c_reset}"; }
+box_end() { printf '%b\n' "  ${c_cyan}└${rule:0:48}┘${c_reset}"; }
+# Extract "real" elapsed time from time(1) stderr (e.g. "0m41.797s")
+time_real() { sed -n '/^real/s/^real[[:space:]]*//p' "$1"; }
+# Print lines with cyan left border (│) to match box header/footer
+box_body() { while IFS= read -r line; do printf '%b %s\n' "  ${c_cyan}│${c_reset}" "$line"; done; }
+box_blank() { printf '  %b\n' "${c_cyan}│${c_reset}"; }
 
 PARALLEL=false
 PROMPT=""
@@ -57,9 +68,13 @@ for svc in opencode claude; do
   fi
 done
 
-printf "  ${c_cyan}Prompt:${c_reset}  %s\n" "\"$PROMPT\""
-printf "  ${c_cyan}Timeout:${c_reset} %ss per agent\n" "$TIMEOUT"
-printf "  ${c_cyan}Mode:${c_reset}    %s\n" "$($PARALLEL && echo 'parallel' || echo 'sequential')"
+echo ""
+printf '%b\n' "${c_cyan}${rule}${c_reset}"
+printf '%b  Agent benchmark · %s%b\n' "${c_cyan}" "$("$PARALLEL" && echo 'parallel' || echo 'sequential')" "${c_reset}"
+printf '%b\n' "${c_cyan}${rule}${c_reset}"
+echo ""
+printf '  %bPrompt:%b  %s\n' "${c_dim}" "${c_reset}" "\"$PROMPT\""
+printf '  %bTimeout:%b %ss per agent\n' "${c_dim}" "${c_reset}" "$TIMEOUT"
 echo ""
 
 # Pass prompt via stdin to avoid quoting/argument issues with docker compose exec
@@ -81,22 +96,57 @@ if "$PARALLEL"; then
   ( time ( run_one claude 'read -r p; exec claude --model minimax-m2.5 --dangerously-skip-permissions -p "$p"' ) ) 2> "$CLAUDE_TIME" > "$CLAUDE_OUT" &
   pid_claude=$!
 
-  wait $pid_open 2>/dev/null || true
-  wait $pid_claude 2>/dev/null || true
+  wait "$pid_open" 2>/dev/null || true
+  wait "$pid_claude" 2>/dev/null || true
 
   echo ""
-  header "--- OpenCode ---"
-  cat "$OPENCODE_TIME"
-  cat "$OPENCODE_OUT"
+  box "OpenCode"
+  box_blank
+  printf '  %b %bTime: %s%b\n' "${c_cyan}│${c_reset}" "${c_time}" "$(time_real "$OPENCODE_TIME")" "${c_reset}"
+  box_blank
+  box_body < "$OPENCODE_OUT"
+  box_blank
+  box_end
   echo ""
-  header "--- Claude Code ---"
-  cat "$CLAUDE_TIME"
-  cat "$CLAUDE_OUT"
+  echo ""
+  box "Claude Code"
+  box_blank
+  printf '  %b %bTime: %s%b\n' "${c_cyan}│${c_reset}" "${c_time}" "$(time_real "$CLAUDE_TIME")" "${c_reset}"
+  box_blank
+  box_body < "$CLAUDE_OUT"
+  box_blank
+  box_end
+  echo ""
+  echo ""
+  printf '%b\n' "${c_green}  ✓ Benchmark complete${c_reset}"
 else
-  header "=== OpenCode ==="
-  time ( run_one opencode 'read -r p; opencode run "$p"' ) 2>&1 || true
+  OPENCODE_OUT=$(mktemp)
+  OPENCODE_TIME=$(mktemp)
+  CLAUDE_OUT=$(mktemp)
+  CLAUDE_TIME=$(mktemp)
+  trap 'rm -f "$OPENCODE_OUT" "$OPENCODE_TIME" "$CLAUDE_OUT" "$CLAUDE_TIME"' EXIT
+
+  ( time ( run_one opencode 'read -r p; opencode run "$p"' ) ) 2> "$OPENCODE_TIME" > "$OPENCODE_OUT" || true
+  ( time ( run_one claude 'read -r p; exec claude --model minimax-m2.5 --dangerously-skip-permissions -p "$p"' ) ) 2> "$CLAUDE_TIME" > "$CLAUDE_OUT" || true
 
   echo ""
-  header "=== Claude Code ==="
-  time ( run_one claude 'read -r p; exec claude --model minimax-m2.5 --dangerously-skip-permissions -p "$p"' ) 2>&1 || true
+  box "OpenCode"
+  box_blank
+  printf '  %b %bTime: %s%b\n' "${c_cyan}│${c_reset}" "${c_time}" "$(time_real "$OPENCODE_TIME")" "${c_reset}"
+  box_blank
+  box_body < "$OPENCODE_OUT"
+  box_blank
+  box_end
+  echo ""
+  echo ""
+  box "Claude Code"
+  box_blank
+  printf '  %b %bTime: %s%b\n' "${c_cyan}│${c_reset}" "${c_time}" "$(time_real "$CLAUDE_TIME")" "${c_reset}"
+  box_blank
+  box_body < "$CLAUDE_OUT"
+  box_blank
+  box_end
+  echo ""
+  echo ""
+  printf '%b\n' "${c_green}  ✓ Benchmark complete${c_reset}"
 fi

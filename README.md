@@ -15,7 +15,7 @@ to any third-party API. Everything stays between your local Docker stack
 and your rented GPU. Agents can use **[SearXNG](https://github.com/searxng/searxng)** for free web search (no search API key required).
 
 
-> **If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi) to keep it maintained and updated.**
+> **If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi) to keep it updated.**
 
 ## Architecture
 
@@ -247,10 +247,13 @@ docker compose logs ssh-tunnel
 **Optional — compare agent latency:** Run a prompt through both agents and see timing (helps confirm the stack is responsive). Use `-p` to run both in parallel:
 
 ```bash
-./bench-agents.sh "hi"      # sequential
-./bench-agents.sh -p "hi"   # parallel (faster wall-clock)
-./bench-agents.sh "build a python terminal based snake app with a unique name"      # sequential
-./bench-agents.sh -p "build a python terminal based snake app with a unique name"   # parallel (faster wall-clock)
+# sequential
+./bench-agents.sh "hi"
+# parallel (faster wall-clock)
+./bench-agents.sh -p "hi"
+# test tool calls
+./bench-agents.sh -p "build a simple terminal snake app in Python with a unique name" 
+# test web search (MCP)
 ./bench-agents.sh -p "report high/low/open/close for S&P 500 ETF SPY in the last trading session"
 ```
 
