@@ -1,6 +1,7 @@
 # unmetered-code
 
 [![CI/CD](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml/badge.svg)](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/ymortazavi?logo=github)](https://github.com/sponsors/ymortazavi)
 
 **Private AI coding agents. No rate limits. ~$1.50/hr.**
 
