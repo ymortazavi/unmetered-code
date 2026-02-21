@@ -36,7 +36,7 @@ token), trained with RL across 200K+ real-world coding environments in
 
 ### Inference Performance
 
-Measured on 2× RTX Pro 6000 (192 GB VRAM), UD-Q4_K_XL quantization:
+Measured on 2× RTX Pro 6000 (192 GB VRAM), [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quantization:
 
 | | 1 agent | 4 agents (parallel) |
 |---|:---:|:---:|
@@ -47,7 +47,7 @@ Measured on 2× RTX Pro 6000 (192 GB VRAM), UD-Q4_K_XL quantization:
 |--------|-------|
 | GPU cost | ~$1.50/hr (varies by availability) |
 | Time to first token | ~2–5s (depends on prompt length) |
-| Quantization | UD-Q4_K_XL (~123 GB weights) |
+| Quantization | [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) (~123 GB weights) |
 
 Speed varies with prompt length, quantization, and GPU hardware. These
 numbers are from informal testing, not rigorous benchmarks.
@@ -171,7 +171,7 @@ vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 r
 This returns a table of offers (sorted by price, cheapest first). The **ID** is
 in the first column; **dph** is $/hour. Omit `-o dph` to use the default sort.
 
-> **Tip:** For the default MiniMax-M2.5 model at `UD-Q4_K_XL` quantization,
+> **Tip:** For the default MiniMax-M2.5 model at [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quantization,
 > you need at least **192 GB VRAM** (e.g. 2x RTX Pro 6000). See the
 > [VRAM Budget](#vram-budget) section for details on what fits.
 
@@ -241,7 +241,17 @@ docker compose exec ssh-tunnel nc -z 127.0.0.1 8080
 curl -s http://localhost:4000/health
 
 # View tunnel logs if needed
-docker logs ssh-tunnel-unmetered-code
+docker compose logs ssh-tunnel
+```
+
+**Optional — compare agent latency:** Run a prompt through both agents and see timing (helps confirm the stack is responsive). Use `-p` to run both in parallel:
+
+```bash
+./bench-agents.sh "hi"      # sequential
+./bench-agents.sh -p "hi"   # parallel (faster wall-clock)
+./bench-agents.sh "build a python terminal based snake app with a unique name"      # sequential
+./bench-agents.sh -p "build a python terminal based snake app with a unique name"   # parallel (faster wall-clock)
+./bench-agents.sh -p "report high/low/open/close for S&P 500 ETF SPY in the last trading session"
 ```
 
 ### 8. Use the agents
@@ -259,11 +269,21 @@ to launch the agent.
 
 **Option B — Direct terminal:**
 
+Three scripts run the agents in your terminal (each ensures the stack is up and `workspace` exists, then attaches to the container with `/workspace` as the working directory):
+
+| Script | What it does |
+|--------|----------------|
+| **`./opencode.sh`** | Starts the OpenCode agent. Interactive TUI; use for general coding tasks. |
+| **`./claude.sh`** | Starts Claude Code with MiniMax M2.5. Asks for permission when using tools (e.g. run commands, edit files). |
+| **`./claude-yolo.sh`** | Same as `claude.sh` but skips all permission prompts (`--dangerously-skip-permissions`). Faster for trusted use. |
+
 ```bash
-./opencode.sh    # OpenCode agent
-./claude.sh      # Claude Code (with permission prompts)
-./claude-yolo.sh # Claude Code, skip all permission prompts
+./opencode.sh
+./claude.sh
+./claude-yolo.sh
 ```
+
+You can pass extra arguments (e.g. `./claude.sh --verbose`); they are forwarded to the agent. Run from the repo root so `docker compose` finds the project.
 
 > Claude Code expects a model name registered in `litellm/config.yaml`.
 > The default config maps `claude-sonnet-4-6` to the llama-server
@@ -285,11 +305,11 @@ docker compose down      # stop local containers
 
 | Quant | ~Size | Fits? | Notes |
 |-------|-------|-------|-------|
-| UD-Q4_K_XL | ~123 GB | Yes | Default — good quality, ~50 tok/s |
+| [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) | ~123 GB | Yes | Default — good quality, ~50 tok/s |
 | UD-Q3_K_XL | ~101 GB | Yes | Smaller, slight quality loss |
 | Q8_0 | ~243 GB | No | Exceeds VRAM |
 
-For MiniMax M2.5 (230B MoE), the default `UD-Q4_K_XL` quant fits
+For MiniMax M2.5 (230B MoE), the default [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quant fits
 comfortably in 192 GB with room for KV cache. Adjust `HF_REPO`,
 `HF_INCLUDE`, and `HF_QUANT` in `config.env` to use a different model
 or quantization.
@@ -314,6 +334,7 @@ open-vscode.sh        Attach VS Code to agent containers
 opencode.sh           Run OpenCode agent in terminal
 claude.sh             Run Claude Code in terminal
 claude-yolo.sh        Run Claude Code with --dangerously-skip-permissions
+bench-agents.sh       Compare OpenCode vs Claude Code latency (use -p for parallel)
 bench.py              Benchmark script
 ```
 

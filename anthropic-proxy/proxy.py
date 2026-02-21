@@ -1,10 +1,10 @@
 """
-Thin proxy between Claude Code and LiteLLM that fixes a streaming bug.
+Thin streaming proxy between Claude Code and LiteLLM.
 
-LiteLLM 1.81.x drops the opening '{' from input_json_delta events when
+LiteLLM can drop the opening '{' from input_json_delta events when
 converting OpenAI tool_calls to Anthropic streaming format.  This proxy
-makes non-streaming requests to LiteLLM and converts the response into
-a correct Anthropic SSE stream.
+forwards the SSE stream in real time and patches only the affected
+chunks, preserving true streaming (token-by-token) for Claude Code.
 """
 
 import json
@@ -37,11 +37,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if is_messages and body:
             data = json.loads(body)
             wants_stream = data.get("stream", False)
-            data["stream"] = False
             body = json.dumps(data).encode()
 
         headers = {}
-        for key in ("content-type", "x-api-key", "anthropic-version", "authorization", "accept"):
+        for key in ("content-type", "x-api-key", "anthropic-version",
+                     "authorization", "accept"):
             val = self.headers.get(key)
             if val:
                 headers[key] = val
@@ -52,7 +52,6 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         try:
             resp = urlopen(req, timeout=600)
-            resp_body = resp.read()
         except HTTPError as e:
             self.send_response(e.code)
             self.send_header("Content-Type", "application/json")
@@ -60,120 +59,71 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self.wfile.write(e.read())
             return
 
-        if not (is_messages and wants_stream):
+        if is_messages and wants_stream:
+            self._stream_forward(resp)
+        else:
+            resp_body = resp.read()
             self.send_response(200)
             for key, val in resp.getheaders():
                 if key.lower() in ("content-type", "x-request-id"):
                     self.send_header(key, val)
             self.end_headers()
             self.wfile.write(resp_body)
-            return
 
-        msg = json.loads(resp_body)
-        self._stream_response(msg)
-
-    def _stream_response(self, msg):
+    def _stream_forward(self, resp):
+        """Forward SSE stream from LiteLLM, fixing input_json_delta on the fly."""
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
 
-        def sse(data):
-            self.wfile.write(f"event: {data['type']}\n".encode())
-            self.wfile.write(f"data: {json.dumps(data)}\n\n".encode())
-            self.wfile.flush()
+        first_json_delta = {}
+        event_lines = []
 
-        sse(
-            {
-                "type": "message_start",
-                "message": {
-                    "id": msg.get("id", ""),
-                    "type": "message",
-                    "role": "assistant",
-                    "model": msg.get("model", ""),
-                    "content": [],
-                    "stop_reason": None,
-                    "stop_sequence": None,
-                    "usage": {
-                        "input_tokens": msg.get("usage", {}).get("input_tokens", 0),
-                        "output_tokens": 0,
-                    },
-                },
-            }
-        )
+        for raw_line in resp:
+            line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
 
-        for idx, block in enumerate(msg.get("content", [])):
-            btype = block.get("type")
+            if line:
+                event_lines.append(line)
+                continue
 
-            if btype == "thinking":
-                sse(
-                    {
-                        "type": "content_block_start",
-                        "index": idx,
-                        "content_block": {"type": "thinking", "thinking": ""},
-                    }
-                )
-                text = block.get("thinking", "")
-                if text:
-                    sse(
-                        {
-                            "type": "content_block_delta",
-                            "index": idx,
-                            "delta": {"type": "thinking_delta", "thinking": text},
-                        }
-                    )
-                sse({"type": "content_block_stop", "index": idx})
+            if event_lines:
+                self._flush_event(event_lines, first_json_delta)
+                event_lines = []
 
-            elif btype == "text":
-                sse(
-                    {
-                        "type": "content_block_start",
-                        "index": idx,
-                        "content_block": {"type": "text", "text": ""},
-                    }
-                )
-                text = block.get("text", "")
-                if text:
-                    sse(
-                        {
-                            "type": "content_block_delta",
-                            "index": idx,
-                            "delta": {"type": "text_delta", "text": text},
-                        }
-                    )
-                sse({"type": "content_block_stop", "index": idx})
+        if event_lines:
+            self._flush_event(event_lines, first_json_delta)
 
-            elif btype == "tool_use":
-                sse(
-                    {
-                        "type": "content_block_start",
-                        "index": idx,
-                        "content_block": {
-                            "type": "tool_use",
-                            "id": block.get("id", ""),
-                            "name": block.get("name", ""),
-                            "input": {},
-                        },
-                    }
-                )
-                inp = block.get("input", {})
-                sse(
-                    {
-                        "type": "content_block_delta",
-                        "index": idx,
-                        "delta": {"type": "input_json_delta", "partial_json": json.dumps(inp)},
-                    }
-                )
-                sse({"type": "content_block_stop", "index": idx})
+    def _flush_event(self, lines, first_json_delta):
+        """Write one SSE event to the client, fixing the bug if needed."""
+        for i, line in enumerate(lines):
+            if not line.startswith("data: "):
+                continue
+            try:
+                data = json.loads(line[6:])
+            except (json.JSONDecodeError, ValueError):
+                break
 
-        sse(
-            {
-                "type": "message_delta",
-                "delta": {"stop_reason": msg.get("stop_reason", "end_turn"), "stop_sequence": None},
-                "usage": {"output_tokens": msg.get("usage", {}).get("output_tokens", 0)},
-            }
-        )
-        sse({"type": "message_stop"})
+            if data.get("type") != "content_block_delta":
+                break
+            delta = data.get("delta", {})
+            if delta.get("type") != "input_json_delta":
+                break
+
+            idx = data.get("index", 0)
+            if idx not in first_json_delta:
+                first_json_delta[idx] = True
+                partial = delta.get("partial_json", "")
+                if partial and not partial.startswith("{"):
+                    delta["partial_json"] = "{" + partial
+                    data["delta"] = delta
+                    lines[i] = "data: " + json.dumps(data)
+            break
+
+        for line in lines:
+            self.wfile.write((line + "\n").encode())
+        self.wfile.write(b"\n")
+        self.wfile.flush()
 
     def log_message(self, fmt, *args):
         sys.stderr.write(f"[proxy] {fmt % args}\n")
