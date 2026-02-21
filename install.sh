@@ -76,10 +76,12 @@ if [[ -z "$INSTALL_DIR" || "$INSTALL_DIR" == *'$HOME'* ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/provision.sh" ]]; then
-  if ! yesno "Directory $INSTALL_DIR already exists and looks like umcode. Use it and only configure/run?" "y"; then
-    fail "Aborted. Choose a different directory or remove $INSTALL_DIR and re-run."
-  fi
-  ok "Using existing repo at $INSTALL_DIR"
+  echo
+  warn "I detected an existing installation in $INSTALL_DIR."
+  echo "  Backup your workspace and delete the directory to update, then re-run the installer."
+  echo "  Or choose a different install directory above."
+  echo
+  fail "Aborted."
 else
   if [[ -d "$INSTALL_DIR" ]]; then
     fail "Directory $INSTALL_DIR exists but is not an umcode clone. Remove it or choose another path."
