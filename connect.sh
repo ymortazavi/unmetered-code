@@ -221,6 +221,7 @@ echo "  Tunnel:          localhost:${LLAMA_PORT}  →ssh→  vast:${LLAMA_PORT}"
 echo "  LiteLLM backend: http://ssh-tunnel:${LLAMA_PORT}/v1"
 echo
 echo "  Run all commands from:  cd ${SCRIPT_DIR}"
+echo "  Agent workspace:        ${SCRIPT_DIR}/workspace"
 echo
 echo "  Start local services (required before verify):"
 echo "    docker compose up -d"
