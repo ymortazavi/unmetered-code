@@ -35,18 +35,20 @@ N=${#OFFER_IDS[@]}
 
 OUTFILE="${REPO_ROOT}/.selected_offer"
 
-# Use fzf when we have a TTY and fzf is installed (stable, no flicker)
+# Use fzf when we have a TTY and fzf is installed (stable, no flicker).
+# Pass raw table (header + lines) so columns line up; extract ID from selected line.
 if [[ -t 1 ]] && command -v fzf &>/dev/null; then
   SELECTED=$(
     {
       printf '%s\n' "$HEADER"
       for (( i = 0; i < N; i++ )); do
-        printf '%s\t%s\n' "${OFFER_IDS[$i]}" "${LINES[$i]}"
+        printf '%s\n' "${LINES[$i]}"
       done
     } | fzf --header-lines=1 --height=20 --reverse --tiebreak=index 2>/dev/null
   ) || true
   if [[ -n "$SELECTED" ]]; then
-    echo "$SELECTED" | cut -f1 > "$OUTFILE"
+    # First column in vastai output is the offer ID
+    echo "$SELECTED" | awk '{print $1}' > "$OUTFILE"
     exit 0
   fi
 fi
