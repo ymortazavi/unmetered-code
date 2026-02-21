@@ -36,8 +36,9 @@ N=${#OFFER_IDS[@]}
 # Output file for selected ID (caller always reads this)
 OUTFILE="${REPO_ROOT}/.selected_offer"
 
-# If not interactive (no TTY on stdin and stdout), write first offer and exit
-if ! [[ -t 0 && -t 1 ]]; then
+# If stdout is not a TTY, we can't show the selector; write first offer and exit.
+# Use stdout (not stdin) so the selector runs in IDE terminals where stdin may be piped.
+if ! [[ -t 1 ]]; then
   echo "${OFFER_IDS[0]}" > "$OUTFILE"
   exit 0
 fi
@@ -66,14 +67,14 @@ draw() {
   printf '\033[1;36m  ↑/↓ select  Enter confirm\033[0m\n'
 }
 
-# Save and set terminal for raw key reading; restore on any exit
+# Save and set terminal for raw key reading; use /dev/tty so it works when stdin is piped
 SAVED_STTY=""
-restore_stty() { [[ -n "$SAVED_STTY" ]] && stty "$SAVED_STTY" 2>/dev/null || true; }
+restore_stty() { [[ -n "$SAVED_STTY" ]] && stty "$SAVED_STTY" < /dev/tty 2>/dev/null || true; }
 trap restore_stty EXIT INT TERM
 
-if [[ -t 0 ]] && [[ -t 1 ]]; then
-  SAVED_STTY=$(stty -g 2>/dev/null) || true
-  stty -echo -icanon min 1 time 0 2>/dev/null || true
+if [[ -e /dev/tty ]]; then
+  SAVED_STTY=$(stty -g < /dev/tty 2>/dev/null) || true
+  stty -echo -icanon min 1 time 0 < /dev/tty 2>/dev/null || true
 fi
 
 # Initial draw
@@ -82,9 +83,9 @@ LINES_DRAWN=$(( N + 2 ))  # header + N rows + hint
 
 while true; do
   KEY=""
-  read -rsn1 KEY
+  read -rsn1 KEY < /dev/tty
   if [[ "$KEY" == $'\033' ]]; then
-    read -rsn2 KEY
+    read -rsn2 KEY < /dev/tty
     if [[ "$KEY" == "[A" ]]; then
       SEL=$(( SEL - 1 ))
       [[ $SEL -lt 0 ]] && SEL=0
