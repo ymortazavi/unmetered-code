@@ -150,6 +150,7 @@ fi
 echo "$INSTANCE_ID" > "${SCRIPT_DIR}/.instance_id"
 ok "Instance created: ${INSTANCE_ID}"
 echo "  Saved to .instance_id"
+echo "  Manage instances: https://cloud.vast.ai/instances/"
 echo
 
 info "Waiting for instance to start running..."
@@ -194,6 +195,8 @@ echo
 echo "  Next steps:"
 echo "    1. Wait for model download to finish"
 echo "    2. Run: ./connect.sh"
-echo "    3. Run: docker compose up -d --build"
+echo "    3. Run: docker compose up -d"
+echo "       Or build from source (custom changes):"
+echo "       docker compose -f compose.yaml -f compose.build.yaml up -d --build"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
