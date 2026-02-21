@@ -33,12 +33,12 @@ done <<< "$RAW"
 N=${#OFFER_IDS[@]}
 [[ "$N" -eq 0 ]] && { echo "No offer rows found" >&2; exit 1; }
 
-# Output file for selected ID (caller reads this when interactive; stdout used for UI)
+# Output file for selected ID (caller always reads this)
 OUTFILE="${REPO_ROOT}/.selected_offer"
 
-# If not a TTY, output first offer to stdout and exit (no interactive selection)
-if ! [[ -t 0 ]]; then
-  echo "${OFFER_IDS[0]}"
+# If not interactive (no TTY on stdin and stdout), write first offer and exit
+if ! [[ -t 0 && -t 1 ]]; then
+  echo "${OFFER_IDS[0]}" > "$OUTFILE"
   exit 0
 fi
 
@@ -66,9 +66,12 @@ draw() {
   printf '\033[1;36m  ↑/↓ select  Enter confirm\033[0m\n'
 }
 
-# Save and set terminal for raw key reading
+# Save and set terminal for raw key reading; restore on any exit
 SAVED_STTY=""
-if [[ -t 0 ]]; then
+restore_stty() { [[ -n "$SAVED_STTY" ]] && stty "$SAVED_STTY" 2>/dev/null || true; }
+trap restore_stty EXIT INT TERM
+
+if [[ -t 0 ]] && [[ -t 1 ]]; then
   SAVED_STTY=$(stty -g 2>/dev/null) || true
   stty -echo -icanon min 1 time 0 2>/dev/null || true
 fi
@@ -97,10 +100,7 @@ while true; do
   fi
 done
 
-# Restore terminal
-[[ -n "$SAVED_STTY" ]] && stty "$SAVED_STTY" 2>/dev/null || true
-
-# Move cursor down past the list so next output is clean
+# Move cursor down past the list so next output is clean (trap will restore stty)
 printf '\033[%dB\033[K\n' "$LINES_DRAWN" >/dev/tty
 
 # Write selected ID to file for caller (stdout was used for UI)
