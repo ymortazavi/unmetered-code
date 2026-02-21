@@ -3,7 +3,7 @@
 [![CI/CD](https://github.com/ymortazavi/umcode/actions/workflows/ci.yml/badge.svg)](https://github.com/ymortazavi/umcode/actions/workflows/ci.yml)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/ymortazavi?logo=github)](https://github.com/sponsors/ymortazavi)
 
-**Private AI coding agents. No rate limits. ~$1.50/hr.**
+**Unmetered Private AI coding agents. No rate limits. ~$1.50/hr.**
 
 Run [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](https://github.com/anomalyco/opencode) backed by [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) on rented GPUs — no API keys, no per-token billing, no usage caps.
 
@@ -20,33 +20,53 @@ Run [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](http
 
 ## Get started
 
+**First-time (clone and configure):**
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/ymortazavi/umcode/main/install.sh | bash
 ```
 
-Prompts for your Vast.ai API key, finds a GPU, provisions the instance, starts the tunnel, and launches Docker. Prints a destroy command at the end so you can stop billing when done.
+**Life cycle:** After the repo is on your machine (and `config.env` has your [Vast.ai](https://cloud.vast.ai/?ref_id=399895) API key), use two commands:
+
+- **`umcode start`** — Rent a GPU, provision the instance, connect the SSH tunnel, and start the local stack. Does everything needed to get agents running.
+- **`umcode destroy`** — Destroy the Vast.ai instance and stop billing. Run when you’re done.
 
 For manual setup, prerequisites, and configuration options, see the **[Setup Guide](docs/setup.md)**.
 
-## Usage
-
-Once the stack is up, run an agent from the installation directory. Your workspace is in $HOME/umcode/workspace.
+**Run `umcode` from anywhere:** Add the CLI to your PATH so you can run `umcode start`, `umcode destroy`, etc. from any directory:
 
 ```bash
-cd $HOME/umcode
-./opencode.sh        # OpenCode — interactive TUI
-./claude.sh          # Claude Code — prompts for tool permissions
-./claude-yolo.sh     # Claude Code — skips all permission prompts
+mkdir -p ~/.local/bin
+ln -sf "$(pwd)/umcode" ~/.local/bin/umcode
+```
+
+Then ensure `~/.local/bin` is in your PATH. For bash, add to `~/.bashrc`; for zsh, add to `~/.zshrc`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Reload your shell (`exec $SHELL`) or open a new terminal. Verify with `umcode --help`.
+
+## Usage
+
+Once the stack is up, run an agent (workspace is in the install directory under `workspace/`). All commands are available via the **`umcode`** CLI ([full list](docs/setup.md#files)). You can run `umcode` from any directory.
+
+```bash
+umcode opencode        # OpenCode — interactive TUI
+umcode claude          # Claude Code — prompts for tool permissions
+umcode claude --yolo   # Claude Code — skips all permission prompts
 ```
 
 Or attach [VS Code](https://github.com/microsoft/vscode) directly to a container:
 
 ```bash
-cd $HOME/umcode
-./open-vscode.sh --opencode   # OpenCode
-./open-vscode.sh --claude     # Claude Code
-./open-vscode.sh --both       # Both (default)
+umcode vscode --opencode   # OpenCode
+umcode vscode --claude     # Claude Code
+umcode vscode --both       # Both (default)
 ```
+
+You can also run the scripts directly from the install directory: `opencode.sh`, `claude.sh`, `open-vscode.sh`, etc.
 
 Install the official extensions for a richer experience: [OpenCode](https://marketplace.visualstudio.com/items?itemName=sst-dev.opencode) · [Claude Code](https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code)
 
@@ -69,7 +89,8 @@ GPU rental (~$1.50/hr, 2× RTX Pro 6000 on [Vast.ai](https://cloud.vast.ai/?ref_
 
 ```bash
 docker compose down   # stop local containers
-./destroy.sh          # terminate Vast.ai instance and stop billing
+umcode destroy        # terminate Vast.ai instance and stop billing
+# or: destroy.sh (from install directory)
 ```
 
 ---
