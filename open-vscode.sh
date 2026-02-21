@@ -1,17 +1,23 @@
 #!/bin/bash
 set -e
 
-hex_encode() {
-  printf '%s' "$1" | xxd -p | tr -d '\n'
-}
-
+# Use full container ID (hex-encoded) and both --remote and --folder-uri so VS Code
+# attaches without prompting. See https://cspotcode.com/posts/attach-vscode-to-container-from-cli
 open_vscode() {
   local container="$1"
   local folder="$2"
-  local hex_name
-  hex_name=$(hex_encode "$container")
+  local container_id
+  container_id=$(docker inspect -f '{{.Id}}' "$container" 2>/dev/null)
+  if [[ -z "$container_id" ]]; then
+    echo "Error: Could not get ID for container '${container}'."
+    exit 1
+  fi
+  local hex_id
+  hex_id=$(printf '%s' "$container_id" | xxd -p | tr -d '\n')
+  local auth="attached-container+${hex_id}"
   echo "Opening VS Code attached to '${container}' at ${folder} ..."
-  code --folder-uri "vscode-remote://attached-container+${hex_name}${folder}"
+  echo "Tip: If the container is recreated (e.g. after docker compose down/up), run this script again to attach to the new container."
+  code --remote "$auth" --folder-uri "vscode-remote://${auth}${folder}"
 }
 
 check_container() {
@@ -26,7 +32,8 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTION]
 
-Attach VS Code to the running agent containers.
+Attach VS Code to the running agent containers ( You must have the Dev Containers extension installed in VS Code)
+After attaching to the correct container, you can open the folder /workspace and open an integrated terminal.
 
 Options:
   --opencode   Open only the OpenCode container
