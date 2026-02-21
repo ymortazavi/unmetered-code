@@ -5,7 +5,7 @@
       "command": "mcp-server-searxng",
       "args": [],
       "env": {
-        "SEARXNG_INSTANCES": "http://searxng-unmetered-code:8080"
+        "SEARXNG_INSTANCES": "http://searxng-umcode:8080"
       }
     }
   }

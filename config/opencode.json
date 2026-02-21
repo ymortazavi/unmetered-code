@@ -20,7 +20,7 @@
       "type": "local",
       "command": ["mcp-server-searxng"],
       "environment": {
-        "SEARXNG_INSTANCES": "http://searxng-unmetered-code:8080"
+        "SEARXNG_INSTANCES": "http://searxng-umcode:8080"
       },
       "timeout": 15000,
       "enabled": true

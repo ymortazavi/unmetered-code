@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# All-in-one installer for unmetered-code.
-# Run: curl -sSL https://raw.githubusercontent.com/ymortazavi/unmetered-code/main/install.sh | bash
+# All-in-one installer for umcode.
+# Run: curl -sSL https://raw.githubusercontent.com/ymortazavi/umcode/main/install.sh | bash
 #
 # This script: clones the repo, asks for config (Vast API key, etc.), provisions
 # a Vast.ai instance, connects the SSH tunnel, and starts Docker. Before exiting
@@ -8,9 +8,9 @@
 
 set -euo pipefail
 
-REPO_URL="${UNMETERED_CODE_REPO:-https://github.com/ymortazavi/unmetered-code.git}"
+REPO_URL="${UNMETERED_CODE_REPO:-https://github.com/ymortazavi/umcode.git}"
 # Use $HOME (not /$HOME); expand once so we never pass a literal $HOME path to git
-DEFAULT_DIR="${UNMETERED_CODE_DIR:-$HOME/unmetered-code}"
+DEFAULT_DIR="${UNMETERED_CODE_DIR:-$HOME/umcode}"
 
 info()  { printf '\033[1;34m→ %s\033[0m\n' "$*"; }
 ok()    { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
@@ -21,13 +21,13 @@ prompt() {
   local var="$1" prompt_text="$2" default="${3:-}"
   if [[ -n "$default" ]]; then
     printf '\033[1;36m%s\033[0m [%s]: ' "$prompt_text" "$default"
-    read -r "$var" < /dev/tty
+    read -r "${var?}" < /dev/tty
     if [[ -z "${!var}" ]]; then
       printf -v "$var" '%s' "$default"
     fi
   else
     printf '\033[1;36m%s\033[0m: ' "$prompt_text"
-    read -r "$var" < /dev/tty
+    read -r "${var?}" < /dev/tty
   fi
 }
 
@@ -44,35 +44,22 @@ yesno() {
 }
 
 echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  unmetered-code — one-shot installer"
-echo "  Private AI coding agents on Vast.ai (~\$1.50/hr)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  umcode — Unmetered private AI on Vast.ai (~\$1.50/hr)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
 
 # ─── Dependency checks ─────────────────────────────────
 
-check_cmd() {
-  if command -v "$1" &>/dev/null; then
-    ok "$1 found"
-    return 0
-  else
-    warn "$1 not found"
-    return 1
-  fi
-}
-
 missing=""
-check_cmd git        || missing+=" git"
-check_cmd docker     || missing+=" docker"
-check_cmd python3    || missing+=" python3"
-if ! docker compose version &>/dev/null && ! docker-compose version &>/dev/null 2>&1; then
-  warn "docker compose (or docker-compose) not found"
-  missing+=" docker-compose"
-fi
+command -v git &>/dev/null        || missing+=" git"
+command -v docker &>/dev/null    || missing+=" docker"
+command -v python3 &>/dev/null   || missing+=" python3"
+docker compose version &>/dev/null 2>&1 || docker-compose version &>/dev/null 2>&1 || missing+=" docker-compose"
 if [[ -n "$missing" ]]; then
-  fail "Install required tools and re-run:${missing}. See README: https://github.com/ymortazavi/unmetered-code#prerequisites"
+  fail "Missing:${missing}. See https://github.com/ymortazavi/umcode#prerequisites"
 fi
+ok "git  docker  python3"
 
 # ─── Install directory ────────────────────────────────
 
@@ -89,17 +76,19 @@ if [[ -z "$INSTALL_DIR" || "$INSTALL_DIR" == *'$HOME'* ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/provision.sh" ]]; then
-  if ! yesno "Directory $INSTALL_DIR already exists and looks like unmetered-code. Use it and only configure/run?" "y"; then
-    fail "Aborted. Choose a different directory or remove $INSTALL_DIR and re-run."
-  fi
-  ok "Using existing repo at $INSTALL_DIR"
+  echo
+  warn "I detected an existing installation in $INSTALL_DIR."
+  echo "  Backup your workspace and delete the directory to update, then re-run the installer."
+  echo "  Or choose a different install directory above."
+  echo
+  fail "Aborted."
 else
   if [[ -d "$INSTALL_DIR" ]]; then
-    fail "Directory $INSTALL_DIR exists but is not an unmetered-code clone. Remove it or choose another path."
+    fail "Directory $INSTALL_DIR exists but is not an umcode clone. Remove it or choose another path."
   fi
-  info "Cloning repository into $INSTALL_DIR ..."
-  git clone --depth 1 "$REPO_URL" "$INSTALL_DIR" || fail "git clone failed"
-  ok "Cloned into $INSTALL_DIR"
+  info "Cloning into $INSTALL_DIR ..."
+  git clone --depth 1 --quiet "$REPO_URL" "$INSTALL_DIR" || fail "git clone failed"
+  ok "Cloned"
 fi
 
 cd "$INSTALL_DIR"
@@ -115,20 +104,7 @@ if [[ -f config.env ]] && grep -q '^VAST_API_KEY="[^"]*"' config.env 2>/dev/null
   fi
 fi
 if [[ -z "${VAST_API_KEY:-}" ]]; then
-  echo
-  if ! yesno "Do you have a Vast.ai account?" "y"; then
-    echo
-    info "Sign up and add credits here:"
-    echo "  https://cloud.vast.ai/?ref_id=399895"
-    echo
-    info "Once you have an account, get your API key from:"
-    echo "  https://cloud.vast.ai/manage-keys/"
-    echo
-    info "Then re-run this installer."
-    exit 0
-  fi
-  echo
-  echo "Get your API key (read/write access) from: https://cloud.vast.ai/manage-keys/"
+  echo "API key: https://cloud.vast.ai/manage-keys/"
   prompt VAST_API_KEY "Vast.ai API key" ""
   [[ -z "${VAST_API_KEY:-}" ]] && fail "VAST_API_KEY is required"
 fi
@@ -136,8 +112,8 @@ fi
 # ─── Config: HF_TOKEN (optional) ──────────────────────
 
 HF_TOKEN=""
-if yesno "Do you want to set an optional HuggingFace token (faster/gated model access)?" "n"; then
-  prompt HF_TOKEN "HuggingFace token (create at https://huggingface.co/settings/tokens)" ""
+if yesno "HuggingFace token (optional, for gated models)?" "n"; then
+  prompt HF_TOKEN "HuggingFace token" ""
 fi
 
 # ─── Write config.env ─────────────────────────────────
@@ -154,7 +130,7 @@ if [[ -n "${HF_TOKEN:-}" ]]; then
 else
   echo "# HF_TOKEN=\"your_hf_token_here\"" >> config.env
 fi
-cat >> config.env <<'CONFIG'
+cat >> config.env <<'CONFIG_TAIL'
 
 # ─── Model (HuggingFace GGUF) ─────────────────────────
 HF_REPO="unsloth/MiniMax-M2.5-GGUF"
@@ -174,7 +150,7 @@ UBATCH_SIZE=4096
 # ─── Vast.ai Instance ─────────────────────────────────
 IMAGE="vastai/llama-cpp:b8054-cuda-12.9"
 DISK_GB=150
-CONFIG
+CONFIG_TAIL
 ok "config.env written"
 
 # ─── vastai CLI ────────────────────────────────────────
@@ -189,28 +165,23 @@ ok "Vast.ai API key configured"
 
 # ─── SSH key (optional) ────────────────────────────────
 
-if yesno "Register your SSH public key with Vast.ai (needed for tunnel)?" "y"; then
+if yesno "Register SSH key with Vast.ai (for tunnel)?" "y"; then
   for key in ~/.ssh/id_ed25519.pub ~/.ssh/id_rsa.pub; do
     if [[ -f "${key/#\~/$HOME}" ]]; then
-      keypath="${key/#\~/$HOME}"
-      vastai set ssh-key "$(cat "$keypath")" 2>/dev/null && ok "SSH key registered" && break
+      vastai set ssh-key "$(cat "${key/#\~/$HOME}")" 2>/dev/null && ok "SSH key registered" && break
     fi
   done
-  if ! vastai show ssh-keys &>/dev/null; then
-    warn "No SSH key found or registration failed. Create one: ssh-keygen -t ed25519 -C you@example.com"
-    echo "  Then: vastai set ssh-key \"\$(cat ~/.ssh/id_ed25519.pub)\""
-  fi
+  vastai show ssh-keys &>/dev/null || warn "No key registered. Run: ssh-keygen -t ed25519 && vastai set ssh-key \"\$(cat ~/.ssh/id_ed25519.pub)\""
 fi
 
 # ─── GPU offer & provision ─────────────────────────────
 
 echo
-info "Searching for GPU offers (2× RTX Pro 6000, ~192GB VRAM)..."
-echo
-vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph 2>/dev/null | head -15
-echo
-prompt OFFER_ID "Paste OFFER_ID from the table above (first column)" ""
-[[ -z "${OFFER_ID:-}" ]] && fail "OFFER_ID is required to provision. Re-run and paste an ID from: vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph"
+info "GPU offers (2× RTX Pro 6000)..."
+./scripts/select-offer.sh || fail "Offer selection failed"
+OFFER_ID=$(cat .selected_offer 2>/dev/null)
+rm -f .selected_offer
+[[ -z "${OFFER_ID:-}" ]] && fail "No offer selected."
 
 info "Provisioning Vast.ai instance (this may take a few minutes)..."
 ./provision.sh "$OFFER_ID" || fail "provision.sh failed"
@@ -227,38 +198,38 @@ info "Connecting SSH tunnel and waiting for model (5–10 min first time)..."
 # ─── Docker Compose ────────────────────────────────────
 
 echo
-echo "How do you want to start the local stack?"
-echo "  1) Pull pre-built images (faster)"
-echo "     docker compose up -d"
-echo "  2) Build from source (needed for Apple Silicon / custom changes)"
-echo "     docker compose -f compose.yaml -f compose.build.yaml up -d --build"
-echo
+echo "Start stack:  1) Pre-built images  2) Build from source (Apple Silicon / custom)"
 prompt BUILD_CHOICE "Choose [1/2]" "1"
 case "${BUILD_CHOICE}" in
-  2)
-    info "Building and starting local stack (this may take a few minutes on first run)..."
-    docker compose -f compose.yaml -f compose.build.yaml up -d --build || fail "docker compose build failed"
-    ;;
-  *)
-    info "Starting local stack (pulling pre-built images)..."
-    docker compose up -d || fail "docker compose up failed"
-    ;;
+  2) info "Building..." ; docker compose -f compose.yaml -f compose.build.yaml up -d --build || fail "docker compose build failed" ;;
+  *) info "Starting..." ; docker compose up -d || fail "docker compose up failed" ;;
 esac
 ok "Stack is up"
 
 # ─── Launch agent ─────────────────────────────────────
 
 echo
-echo "How do you want to use the agents?"
-echo "  1) Terminal: OpenCode         ./opencode.sh"
-echo "  2) Terminal: Claude Code      ./claude.sh"
-echo "  3) Terminal: Claude (YOLO)    ./claude-yolo.sh"
-echo "  4) VS Code: OpenCode          ./open-vscode.sh --opencode"
-echo "  5) VS Code: Claude Code       ./open-vscode.sh --claude"
-echo "  6) VS Code: Both              ./open-vscode.sh --both"
-echo "  7) Skip — I'll launch manually"
-echo
+echo "Launch agent:  1) opencode  2) claude  3) claude --yolo  4–6) VS Code  7) Skip"
 prompt AGENT_CHOICE "Choose [1-7]" "7"
+
+# ─── Add umcode to PATH (optional) ─────────────────────
+
+if yesno "Add umcode to PATH (~/.local/bin)?" "y"; then
+  LOCAL_BIN="${HOME}/.local/bin"
+  mkdir -p "$LOCAL_BIN"
+  if ln -sf "${INSTALL_DIR}/umcode" "${LOCAL_BIN}/umcode" 2>/dev/null; then
+    ok "Symlinked umcode to ${LOCAL_BIN}/umcode"
+    if ! echo ":$PATH:" | grep -q ":${LOCAL_BIN}:"; then
+      echo ""
+      echo "  Add to your shell config (~/.bashrc or ~/.zshrc):"
+      echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+      echo ""
+      echo "  Then run:  exec \$SHELL   (or open a new terminal)"
+    fi
+  else
+    warn "Could not create symlink. Add manually:  ln -sf \"${INSTALL_DIR}/umcode\" ~/.local/bin/umcode"
+  fi
+fi
 
 # ─── Success + DESTROY reminder ────────────────────────
 
@@ -267,25 +238,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 ok "Setup complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
-echo
 printf '\033[1;31m'
-echo ""
-echo "═══════════════════════════════════════════════════════════════════════"
-echo "  TO STOP BILLING — Destroy the Vast.ai instance when you're done"
-echo "═══════════════════════════════════════════════════════════════════════"
-echo ""
-echo "  Instance ID: ${INSTANCE_ID}"
-echo ""
-echo "  Destroy instance and stop charges:"
-echo "    cd \"$INSTALL_DIR\" && ./destroy.sh"
-echo ""
-echo "  Or from anywhere:  vastai destroy instance ${INSTANCE_ID}"
-echo ""
-echo "  Then stop local containers:  cd \"$INSTALL_DIR\" && docker compose down"
-echo "═══════════════════════════════════════════════════════════════════════"
+echo "  Stop billing when done:  umcode destroy   (instance ${INSTANCE_ID})"
 printf '\033[0m'
-echo
-echo "Save the command above. You are being billed until the instance is destroyed."
 echo
 
 case "${AGENT_CHOICE}" in
@@ -295,5 +250,5 @@ case "${AGENT_CHOICE}" in
   4) exec ./open-vscode.sh --opencode ;;
   5) exec ./open-vscode.sh --claude ;;
   6) exec ./open-vscode.sh --both ;;
-  *) echo "Run agents anytime:  ./opencode.sh  ./claude.sh  ./open-vscode.sh --both" ;;
+  *) echo "Run agents anytime:  ./umcode opencode  ./umcode claude  ./umcode vscode --both" ;;
 esac

@@ -4,3 +4,4 @@
 # Connect script output (instance ID, tunnel .env)
 .instance_id
 .env
+.selected_offer

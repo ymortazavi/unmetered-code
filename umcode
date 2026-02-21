@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# umcode — single entry point for all umcode commands.
+# Usage: umcode [--help | -h] <subcommand> [args...]
+# Can be run from anywhere (e.g. from PATH); subcommands run as if from the install directory.
+set -euo pipefail
+
+# Resolve install directory (repo root), including when umcode is on PATH or a symlink.
+resolve_script_path() {
+  local path="$1"
+  while [[ -L "$path" ]]; do
+    local target
+    target=$(readlink "$path")
+    if [[ "$target" != /* ]]; then
+      path="$(cd "$(dirname "$path")" && pwd)/$target"
+    else
+      path="$target"
+    fi
+  done
+  echo "$path"
+}
+
+if [[ -n "${UMCODE_DIR:-}" && -d "$UMCODE_DIR" && -x "${UMCODE_DIR}/provision.sh" ]]; then
+  # Explicit install directory (e.g. for scripting)
+  :
+elif [[ "$0" == */* ]]; then
+  # Run via path (e.g. ./umcode or /path/to/umcode)
+  UMCODE_DIR="$(cd "$(dirname "$(resolve_script_path "$0")")" && pwd)"
+else
+  # Run via PATH (e.g. plain "umcode"); use path of the binary that was found
+  REAL_UMCODE=$(command -v umcode 2>/dev/null) || true
+  if [[ -z "$REAL_UMCODE" || "$REAL_UMCODE" != */* ]]; then
+    echo "umcode: could not determine install directory. Run from repo (e.g. ./umcode) or set UMCODE_DIR." >&2
+    exit 1
+  fi
+  UMCODE_DIR="$(cd "$(dirname "$(resolve_script_path "$REAL_UMCODE")")" && pwd)"
+fi
+
+# Run all subcommands with install dir as CWD so docker compose, config.env, etc. work from anywhere.
+cd "$UMCODE_DIR"
+
+usage() {
+  cat <<EOF
+Usage: umcode [--help | -h] <subcommand> [args...]
+
+Private AI coding agents on Vast.ai. Can be run from anywhere; commands run as if from the install directory.
+
+Subcommands:
+  start                   Rent GPU, provision, connect, and start local stack (full life cycle)
+  provision <OFFER_ID>    Create Vast.ai instance
+  connect [INSTANCE_ID]   SSH tunnel and wait for model (-v for verbose)
+  destroy [INSTANCE_ID]   Destroy Vast.ai instance and stop billing
+  opencode [args...]      Run OpenCode agent in terminal
+  claude [args...]        Run Claude Code (add --yolo to skip permission prompts)
+  vscode [--opencode|--claude|--both]   Attach VS Code to agent containers
+  bench [-p] [prompt]     Benchmark both agents (-p for parallel)
+
+First-time: curl -sSL https://raw.githubusercontent.com/ymortazavi/umcode/main/install.sh | bash   (clone + config). Then: umcode start
+
+Full list and details: see docs/setup.md
+EOF
+  exit 0
+}
+
+SUB="${1:-}"
+case "$SUB" in
+  -h|--help|help|"") usage ;;
+  -v|--version)
+    echo "umcode (see docs/setup.md for details)"
+    exit 0
+    ;;
+esac
+
+shift || true
+
+case "$SUB" in
+  start)     exec "${UMCODE_DIR}/start.sh" "$@" ;;
+  provision) exec "${UMCODE_DIR}/provision.sh" "$@" ;;
+  connect)   exec "${UMCODE_DIR}/connect.sh" "$@" ;;
+  destroy)   exec "${UMCODE_DIR}/destroy.sh" "$@" ;;
+  opencode)  exec "${UMCODE_DIR}/opencode.sh" "$@" ;;
+  claude)
+    if [[ "${1:-}" == "--yolo" ]]; then
+      shift
+      exec "${UMCODE_DIR}/claude-yolo.sh" "$@"
+    else
+      exec "${UMCODE_DIR}/claude.sh" "$@"
+    fi
+    ;;
+  vscode)    exec "${UMCODE_DIR}/open-vscode.sh" "$@" ;;
+  bench)     exec "${UMCODE_DIR}/bench-agents.sh" "$@" ;;
+  *)
+    echo "umcode: unknown subcommand '${SUB}'" >&2
+    echo "Run 'umcode --help' for usage." >&2
+    exit 1
+    ;;
+esac

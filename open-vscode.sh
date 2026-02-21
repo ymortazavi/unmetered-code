@@ -14,7 +14,7 @@ open_vscode() {
     echo "Error: Could not get name for container '${container}'."
     exit 1
   fi
-  # Docker returns name with leading slash (e.g. /opencode-unmetered-code)
+  # Docker returns name with leading slash (e.g. /opencode-umcode)
   local hex_name
   hex_name=$(printf '%s' "$docker_name" | xxd -p | tr -d '\n')
   local auth="attached-container+${hex_name}"
@@ -27,7 +27,7 @@ open_vscode() {
 check_container() {
   if ! docker inspect --format='{{.State.Running}}' "$1" 2>/dev/null | grep -q true; then
     echo "Error: Container '$1' is not running."
-    echo "Start the stack first:  cd unmetered-code && docker compose up -d --build"
+    echo "Start the stack first:  cd umcode && docker compose up -d --build"
     exit 1
   fi
 }
@@ -60,19 +60,19 @@ done
 
 case "$TARGET" in
   opencode)
-    check_container "opencode-unmetered-code"
-    open_vscode "opencode-unmetered-code" "/workspace"
+    check_container "opencode-umcode"
+    open_vscode "opencode-umcode" "/workspace"
     ;;
   claude)
-    check_container "claude-code-unmetered-code"
-    open_vscode "claude-code-unmetered-code" "/workspace"
+    check_container "claude-code-umcode"
+    open_vscode "claude-code-umcode" "/workspace"
     ;;
   both)
-    check_container "opencode-unmetered-code"
-    check_container "claude-code-unmetered-code"
-    open_vscode "opencode-unmetered-code" "/workspace"
+    check_container "opencode-umcode"
+    check_container "claude-code-umcode"
+    open_vscode "opencode-umcode" "/workspace"
     sleep 1
-    open_vscode "claude-code-unmetered-code" "/workspace"
+    open_vscode "claude-code-umcode" "/workspace"
     ;;
 esac
 

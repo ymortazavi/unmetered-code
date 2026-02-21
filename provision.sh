@@ -37,7 +37,7 @@ if ! command -v vastai &>/dev/null; then
   fail "vastai CLI not found. Install: pip install vastai"
 fi
 
-vastai set api-key "$VAST_API_KEY"
+vastai set api-key "$VAST_API_KEY" >/dev/null 2>&1
 
 ONSTART=$(cat <<'ONSTART_SCRIPT'
 #!/bin/bash
@@ -115,21 +115,7 @@ if [[ -n "${HF_TOKEN:-}" && "${HF_TOKEN}" != "none" ]]; then
   ENV_ARGS+=" -e HF_TOKEN=${HF_TOKEN}"
 fi
 
-echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Vast.ai Provisioner (SSH tunnel)"
-echo
-echo "  Offer ID:  ${OFFER_ID}"
-echo "  Image:     ${IMAGE}"
-echo "  Disk:      ${DISK_GB} GB"
-echo "  Model:     ${HF_REPO} (${HF_INCLUDE})"
-echo "  Context:   ${CTX_SIZE}"
-echo "  Parallel:  ${PARALLEL}"
-echo "  Access:    SSH tunnel only (port ${LLAMA_PORT} not exposed)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo
-
-info "Creating instance on offer ${OFFER_ID}..."
+info "Creating instance ${OFFER_ID} (${IMAGE}, ${DISK_GB}GB)..."
 
 RESULT=$(vastai create instance "$OFFER_ID" \
   --image "$IMAGE" \
@@ -149,11 +135,7 @@ fi
 
 echo "$INSTANCE_ID" > "${SCRIPT_DIR}/.instance_id"
 ok "Instance created: ${INSTANCE_ID}"
-echo "  Saved to .instance_id"
-echo "  Manage instances: https://cloud.vast.ai/instances/"
-echo
-
-info "Waiting for instance to start running..."
+info "Waiting for instance to start..."
 
 for i in $(seq 1 60); do
   STATUS=$(vastai show instance "$INSTANCE_ID" --raw 2>/dev/null \
@@ -184,19 +166,5 @@ if [[ "$STATUS" != "running" ]]; then
   fail "Instance did not reach running state within 10 minutes"
 fi
 
-echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-ok "Provisioning complete!"
-echo
-echo "  Instance ID:  ${INSTANCE_ID}"
-echo "  The model is downloading on the remote machine."
-echo "  This may take 5-10 minutes depending on model size."
-echo
-echo "  Next steps:"
-echo "    1. Wait for model download to finish"
-echo "    2. Run: ./connect.sh"
-echo "    3. Run: docker compose up -d"
-echo "       Or build from source (custom changes):"
-echo "       docker compose -f compose.yaml -f compose.build.yaml up -d --build"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ok "Instance ${INSTANCE_ID} running. Model will download next (5–10 min)."
 echo
