@@ -215,16 +215,14 @@ minute or two.
 docker compose up -d
 ```
 
-This pulls the prebuilt images from GHCR (linux/amd64) and starts the stack.
-On **Apple Silicon (arm64)** there are no prebuilt images; build from source:
+This pulls the prebuilt images from GHCR (linux/amd64 and linux/arm64) and starts the stack.
+If you prefer to build your own images, run:
 
 ```bash
 docker compose -f compose.yaml -f compose.build.yaml up -d --build
 ```
 
 > **Note:** The first run can take several minutes (often 2–5+ min) while the four custom images are built. Later runs reuse the images.
-
-On x86_64 you can also build from source with the same command.
 
 | Container | Role |
 |-----------|------|
@@ -352,8 +350,7 @@ bench.py              Benchmark script
 
 ## Troubleshooting
 
-**No matching manifest for linux/arm64 (Apple Silicon):**  
-Prebuilt GHCR images are amd64 only. Build from source (first run may take several minutes):
+**Build your own images:** To build images locally instead of pulling from GHCR (e.g. after changing Dockerfiles), first run may take several minutes:
 ```bash
 docker compose -f compose.yaml -f compose.build.yaml up -d --build
 ```
