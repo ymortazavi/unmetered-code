@@ -12,10 +12,10 @@ leaves your machine**. The model runs on a
 [Vast.ai](https://cloud.vast.ai/?ref_id=399895) GPU instance connected
 through an encrypted SSH tunnel — no code, prompts, or outputs are sent
 to any third-party API. Everything stays between your local Docker stack
-and your rented GPU.
+and your rented GPU. Agents can use **[SearXNG](https://github.com/searxng/searxng)** for free web search (no search API key required).
 
 
-> **If unmetered-code cuts your AI spend, [sponsor the project](https://github.com/sponsors/ymortazavi) to keep it maintained and updated.**
+> **If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi) to keep it maintained and updated.**
 
 ## Architecture
 
@@ -74,7 +74,7 @@ visible to the other.
 ### Required
 
 - **Docker + Docker Compose** — needed to run the local service stack
-  (LiteLLM, SSH tunnel, agents, SearXNG). Install via
+  (LiteLLM, SSH tunnel, agents, [SearXNG](https://github.com/searxng/searxng) for free web search). Install via
   [Docker Desktop](https://docs.docker.com/get-docker/) (macOS / Windows)
   or [Docker Engine](https://docs.docker.com/engine/install/) (Linux).
   Compose v2 is included with modern Docker installs.
@@ -165,11 +165,11 @@ is skipped entirely — the default public model works fine without it.
 Search for available machines on Vast.ai:
 
 ```bash
-vastai search offers 'gpu_name=RTX_Pro_6000 num_gpus>=2 reliability>0.9 inet_down>200'
+vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph
 ```
 
-This returns a table of offers. Note the **ID** in the first column of the
-offer you want.
+This returns a table of offers (sorted by price, cheapest first). The **ID** is
+in the first column; **dph** is $/hour. Omit `-o dph` to use the default sort.
 
 > **Tip:** For the default MiniMax-M2.5 model at `UD-Q4_K_XL` quantization,
 > you need at least **192 GB VRAM** (e.g. 2x RTX Pro 6000). See the
@@ -186,7 +186,7 @@ This creates a Vast.ai instance that downloads the model and starts
 reachable through the SSH tunnel.
 
 The script waits for the instance to enter `running` state, then prints
-next steps. Model download takes 10–30 minutes depending on size and
+next steps. Model download takes 5–10 minutes depending on size and
 network speed.
 
 ### 5. Connect the SSH tunnel
@@ -208,12 +208,16 @@ minute or two.
 docker compose up -d
 ```
 
-This pulls the prebuilt images from GHCR and starts the stack. To build from
-source instead, use:
+This pulls the prebuilt images from GHCR (linux/amd64) and starts the stack.
+On **Apple Silicon (arm64)** there are no prebuilt images; build from source:
 
 ```bash
 docker compose -f compose.yaml -f compose.build.yaml up -d --build
 ```
+
+> **Note:** The first run can take several minutes (often 2–5+ min) while the four custom images are built. Later runs reuse the images.
+
+On x86_64 you can also build from source with the same command.
 
 | Container | Role |
 |-----------|------|
@@ -222,16 +226,16 @@ docker compose -f compose.yaml -f compose.build.yaml up -d --build
 | `anthropic-proxy` | Translates Anthropic API format for Claude Code |
 | `opencode` | OpenCode agent with shared `/workspace` |
 | `claude` | Claude Code agent with shared `/workspace` |
-| `searxng` | Local search engine on `http://localhost:8080` |
+| `searxng` | Free web search for agents ([SearXNG](https://github.com/searxng/searxng)) at `http://localhost:8080` |
 
 Docker Compose handles startup order automatically — each service waits for
-its dependencies to be healthy before starting.
+its dependencies to be healthy before starting. Both agents have [SearXNG](https://github.com/searxng/searxng) MCP preconfigured for web search at no extra cost.
 
 ### 7. Verify everything is working
 
 ```bash
 # Check the SSH tunnel is forwarding
-docker exec ssh-tunnel-unmetered-code nc -z 127.0.0.1 8080
+docker compose exec ssh-tunnel nc -z 127.0.0.1 8080
 
 # Check LiteLLM can reach the backend
 curl -s http://localhost:4000/health
@@ -256,14 +260,9 @@ to launch the agent.
 **Option B — Direct terminal:**
 
 ```bash
-docker exec -it opencode-unmetered-code opencode
-docker exec -it claude-code-unmetered-code claude --model minimax-m2.5
-```
-
-**Option C — Claude Code YOLO mode** (skips all permission prompts):
-
-```bash
-./claude-yolo.sh
+./opencode.sh    # OpenCode agent
+./claude.sh      # Claude Code (with permission prompts)
+./claude-yolo.sh # Claude Code, skip all permission prompts
 ```
 
 > Claude Code expects a model name registered in `litellm/config.yaml`.
@@ -304,24 +303,32 @@ config.env            Configuration (API key, model, server settings)
 provision.sh          Create Vast.ai instance
 connect.sh            Fetch SSH endpoint, write .env
 destroy.sh            Destroy Vast.ai instance
-compose.yaml          Local services (ssh-tunnel, LiteLLM, OpenCode, Claude, SearXNG)
+compose.yaml          Local services (ssh-tunnel, LiteLLM, OpenCode, Claude, [SearXNG](https://github.com/searxng/searxng))
 ssh-tunnel/           SSH tunnel container (Dockerfile + entrypoint)
 litellm/config.yaml   LiteLLM proxy configuration
 config/opencode.json  OpenCode agent configuration
 opencode/             OpenCode container (Dockerfile + entrypoint)
 claude/               Claude Code container (Dockerfile + entrypoint)
-searxng/settings.yml  SearXNG search engine configuration
+searxng/settings.yml  [SearXNG](https://github.com/searxng/searxng) config (free web search for agents)
 open-vscode.sh        Attach VS Code to agent containers
+opencode.sh           Run OpenCode agent in terminal
+claude.sh             Run Claude Code in terminal
 claude-yolo.sh        Run Claude Code with --dangerously-skip-permissions
 bench.py              Benchmark script
 ```
 
 ## Troubleshooting
 
+**No matching manifest for linux/arm64 (Apple Silicon):**  
+Prebuilt GHCR images are amd64 only. Build from source (first run may take several minutes):
+```bash
+docker compose -f compose.yaml -f compose.build.yaml up -d --build
+```
+
 **SSH tunnel not connecting:**
 ```bash
 # Check tunnel container logs
-docker logs ssh-tunnel-unmetered-code
+docker compose logs ssh-tunnel
 
 # Verify SSH access manually
 ssh -p <SSH_PORT> root@<PUBLIC_IP>

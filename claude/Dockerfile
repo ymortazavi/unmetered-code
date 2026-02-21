@@ -50,6 +50,11 @@ RUN mkdir -p /workspace && chown node:node /workspace
 
 RUN chmod -R a+rX /usr/local/cargo /usr/local/rustup
 
+# Default MCP config (SearXNG); copied into mounted home/workspace at runtime so it isn't shadowed by volumes
+RUN mkdir -p /opt/claude-defaults
+COPY claude-mcp-config.json /opt/claude-defaults/.claude.json
+RUN cp /opt/claude-defaults/.claude.json /opt/claude-defaults/.mcp.json && chmod -R a+r /opt/claude-defaults
+
 WORKDIR /workspace
 
 COPY entrypoint.sh /entrypoint.sh

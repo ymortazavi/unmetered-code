@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "search": {
+      "type": "stdio",
+      "command": "mcp-server-searxng",
+      "args": [],
+      "env": {
+        "SEARXNG_INSTANCES": "http://searxng-unmetered-code:8080"
+      }
+    }
+  }
+}

@@ -1,2 +1,6 @@
 # Local ruff install used for formatting
 .venv-ruff/
+
+# Connect script output (instance ID, tunnel .env)
+.instance_id
+.env

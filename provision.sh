@@ -16,9 +16,8 @@ API traffic is encrypted via an SSH tunnel (see connect.sh / compose.yaml).
 
   OFFER_ID   The offer/contract ID from 'vastai search offers'.
 
-To find offers with 2× RTX Pro 6000:
-  vastai search offers 'gpu_name=RTX_PRO_6000_S num_gpus>=2 reliability>0.9'
-  vastai search offers 'gpu_name=RTX_PRO_6000_WS num_gpus>=2 reliability>0.9'
+To find offers with 2× RTX Pro 6000 (price ascending):
+  vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph
 
 Configuration is read from config.env in the same directory.
 EOF
@@ -31,6 +30,8 @@ OFFER_ID="$1"
 source "${SCRIPT_DIR}/config.env"
 
 [[ -z "${VAST_API_KEY:-}" ]] && fail "VAST_API_KEY is not set in config.env"
+
+mkdir -p "${SCRIPT_DIR}/workspace"
 
 if ! command -v vastai &>/dev/null; then
   fail "vastai CLI not found. Install: pip install vastai"
@@ -188,7 +189,7 @@ ok "Provisioning complete!"
 echo
 echo "  Instance ID:  ${INSTANCE_ID}"
 echo "  The model is downloading on the remote machine."
-echo "  This may take 10-30 minutes depending on model size."
+echo "  This may take 5-10 minutes depending on model size."
 echo
 echo "  Next steps:"
 echo "    1. Wait for model download to finish"

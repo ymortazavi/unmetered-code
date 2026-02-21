@@ -11,4 +11,4 @@ if ! docker compose ps --status running -q claude &>/dev/null; then
   exit 1
 fi
 
-exec docker compose exec -it claude bash -c 'cd /workspace && exec claude --model minimax-m2.5 --dangerously-skip-permissions "$@"' _ "$@"
+exec docker compose exec -it claude bash -c 'cd /workspace && exec claude --model minimax-m2.5 "$@"' _ "$@"
