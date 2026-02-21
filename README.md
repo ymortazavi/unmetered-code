@@ -413,8 +413,4 @@ Prices from [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing
 [OpenAI](https://developers.openai.com/api/docs/pricing) (Standard tier), and
 [MiniMax](https://platform.minimax.io/docs/guides/pricing-paygo) (Pay as you go).
 
-With unmetered-code you pay a flat GPU rental regardless of how many
-tokens you use. Whether that's cheaper than the MiniMax API depends on
-how heavily you use it — the break-even point is roughly 1–2M output
-tokens per hour. The main advantages over any API are zero rate limits,
-4 parallel agents, and full privacy (your code never leaves your network or the vast.ai host).
+With unmetered-code you pay a flat GPU rental regardless of token use; it will not undercut the MiniMax API on price. The advantages are zero rate limits, 4 parallel agents, and full privacy — your code never leaves your network or the vast.ai host.
