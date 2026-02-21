@@ -36,7 +36,7 @@ token), trained with RL across 200K+ real-world coding environments in
 
 ### Inference Performance
 
-Measured on 2× RTX Pro 6000 (192 GB VRAM), [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quantization:
+Measured on 2× RTX Pro 6000 (192 GB VRAM), [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quantization:
 
 | | 1 agent | 4 agents (parallel) |
 |---|:---:|:---:|
@@ -47,7 +47,7 @@ Measured on 2× RTX Pro 6000 (192 GB VRAM), [UD-Q4_K_XL](https://unsloth.ai/docs
 |--------|-------|
 | GPU cost | ~$1.50/hr (varies by availability) |
 | Time to first token | ~2–5s (depends on prompt length) |
-| Quantization | [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) (~123 GB weights) |
+| Quantization | [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) (~123 GB weights) |
 
 Speed varies with prompt length, quantization, and GPU hardware. These
 numbers are from informal testing, not rigorous benchmarks.
@@ -120,7 +120,7 @@ visible to the other.
 
 - **HuggingFace account + token** — only needed if you want to download
   gated or private models (e.g. Llama, Mistral). The default model
-  (`unsloth/MiniMax-M2.5-GGUF`) is public and downloads without
+  ([unsloth/MiniMax-M2.5-GGUF](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF)) is public and downloads without
   authentication. Having a HuggingFace token can also give you **faster
   downloads** from the HuggingFace CDN compared to anonymous access.
   See [Step 2](#2-configure-configenv) for how to set it up.
@@ -178,7 +178,7 @@ vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 r
 This returns a table of offers (sorted by price, cheapest first). The **ID** is
 in the first column; **dph** is $/hour. Omit `-o dph` to use the default sort.
 
-> **Tip:** For the default MiniMax-M2.5 model at [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quantization,
+> **Tip:** For the default MiniMax-M2.5 model at [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quantization,
 > you need at least **192 GB VRAM** (e.g. 2x RTX Pro 6000). See the
 > [VRAM Budget](#vram-budget) section for details on what fits.
 
@@ -317,11 +317,11 @@ docker compose down      # stop local containers
 
 | Quant | ~Size | Fits? | Notes |
 |-------|-------|-------|-------|
-| [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) | ~123 GB | Yes | Default — good quality, ~50 tok/s |
-| [UD-Q3_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) | ~101 GB | Yes | Smaller, slight quality loss |
+| [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) | ~123 GB | Yes | Default — good quality, ~50 tok/s |
+| [UD-Q3_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) | ~101 GB | Yes | Smaller, slight quality loss |
 | [Q8_0](https://github.com/ggml-org/llama.cpp/blob/master/examples/quantize/README.md) | ~243 GB | No | Exceeds VRAM |
 
-For MiniMax M2.5 (230B MoE), the default [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quant fits
+For MiniMax M2.5 (230B MoE), the default [UD-Q4_K_XL](https://huggingface.co/unsloth/MiniMax-M2.5-GGUF) quant fits
 comfortably in 192 GB with room for KV cache. Adjust `HF_REPO`,
 `HF_INCLUDE`, and `HF_QUANT` in `config.env` to use a different model
 or quantization.
