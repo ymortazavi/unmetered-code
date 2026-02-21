@@ -7,6 +7,8 @@
 
 Run [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](https://github.com/anomalyco/opencode) backed by [MiniMax M2.5](https://huggingface.co/MiniMaxAI/MiniMax-M2.5) on rented GPUs — no API keys, no per-token billing, no usage caps.
 
+> Requires a [Vast.ai](https://cloud.vast.ai/?ref_id=399895) account with credits loaded.
+
 ![Architecture diagram](assets/architecture.png)
 
 - **Private** — model runs on your rented GPU, connected via encrypted SSH tunnel; no code or prompts sent to third-party APIs
