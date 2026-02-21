@@ -132,13 +132,20 @@ visible to the other.
 
 ## Quick Start
 
-### 1. Get your Vast.ai API key
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/ymortazavi/unmetered-code.git
+cd unmetered-code
+```
+
+### 2. Get your Vast.ai API key
 
 [Sign up on Vast.ai](https://cloud.vast.ai/?ref_id=399895), add credits,
 then go to [Account](https://cloud.vast.ai/account/) to generate an API
 key and copy it. You'll paste it into `config.env` in the next step.
 
-### 2. Configure `config.env`
+### 3. Configure `config.env`
 
 Open `config.env` and set your Vast.ai API key:
 
@@ -160,7 +167,7 @@ HF_TOKEN="hf_your_token_here"
 If the line is commented out or set to `"none"`, HuggingFace authentication
 is skipped entirely — the default public model works fine without it.
 
-### 3. Find a GPU offer
+### 4. Find a GPU offer
 
 Search for available machines on Vast.ai:
 
@@ -175,7 +182,7 @@ in the first column; **dph** is $/hour. Omit `-o dph` to use the default sort.
 > you need at least **192 GB VRAM** (e.g. 2x RTX Pro 6000). See the
 > [VRAM Budget](#vram-budget) section for details on what fits.
 
-### 4. Provision the remote instance
+### 5. Provision the remote instance
 
 ```bash
 ./provision.sh <OFFER_ID>
@@ -189,7 +196,7 @@ The script waits for the instance to enter `running` state, then prints
 next steps. Model download takes 5–10 minutes depending on size and
 network speed.
 
-### 5. Connect the SSH tunnel
+### 6. Connect the SSH tunnel
 
 ```bash
 ./connect.sh
@@ -202,7 +209,7 @@ Compose.
 If SSH isn't ready yet (the instance is still booting), re-run after a
 minute or two.
 
-### 6. Start local services
+### 7. Start local services
 
 ```bash
 docker compose up -d
@@ -231,7 +238,7 @@ On x86_64 you can also build from source with the same command.
 Docker Compose handles startup order automatically — each service waits for
 its dependencies to be healthy before starting. Both agents have [SearXNG](https://github.com/searxng/searxng) MCP preconfigured for web search at no extra cost.
 
-### 7. Verify everything is working
+### 8. Verify everything is working
 
 ```bash
 # Check the SSH tunnel is forwarding
@@ -257,7 +264,7 @@ docker compose logs ssh-tunnel
 ./bench-agents.sh -p "report high/low/open/close for S&P 500 ETF SPY in the last trading session"
 ```
 
-### 8. Use the agents
+### 9. Use the agents
 
 **Option A — VS Code (recommended):**
 
@@ -292,7 +299,7 @@ You can pass extra arguments (e.g. `./claude.sh --verbose`); they are forwarded 
 > The default config maps `claude-sonnet-4-6` to the llama-server
 > backend. Add more aliases there if Claude updates its default model name.
 
-### 9. Tear down
+### 10. Tear down
 
 When you're done, stop the local containers and destroy the Vast.ai
 instance to stop billing:
