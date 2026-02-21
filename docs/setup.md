@@ -33,8 +33,8 @@
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/ymortazavi/unmetered-code.git
-cd unmetered-code
+git clone https://github.com/ymortazavi/umcode.git
+cd umcode
 ```
 
 ### 2. Configure `config.env`

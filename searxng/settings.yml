@@ -6,7 +6,7 @@ search:
     - json
 
 server:
-  secret_key: "unmetered-code-local-dev"
+  secret_key: "umcode-local-dev"
   bind_address: "0.0.0.0"
   port: 8080
   limiter: false

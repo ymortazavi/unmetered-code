@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# All-in-one installer for unmetered-code.
-# Run: curl -sSL https://raw.githubusercontent.com/ymortazavi/unmetered-code/main/install.sh | bash
+# All-in-one installer for umcode.
+# Run: curl -sSL https://raw.githubusercontent.com/ymortazavi/umcode/main/install.sh | bash
 #
 # This script: clones the repo, asks for config (Vast API key, etc.), provisions
 # a Vast.ai instance, connects the SSH tunnel, and starts Docker. Before exiting
@@ -8,9 +8,9 @@
 
 set -euo pipefail
 
-REPO_URL="${UNMETERED_CODE_REPO:-https://github.com/ymortazavi/unmetered-code.git}"
+REPO_URL="${UNMETERED_CODE_REPO:-https://github.com/ymortazavi/umcode.git}"
 # Use $HOME (not /$HOME); expand once so we never pass a literal $HOME path to git
-DEFAULT_DIR="${UNMETERED_CODE_DIR:-$HOME/unmetered-code}"
+DEFAULT_DIR="${UNMETERED_CODE_DIR:-$HOME/umcode}"
 
 info()  { printf '\033[1;34m→ %s\033[0m\n' "$*"; }
 ok()    { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
@@ -45,7 +45,7 @@ yesno() {
 
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  unmetered-code — one-shot installer"
+echo "  umcode — one-shot installer"
 echo "  Private AI coding agents on Vast.ai (~\$1.50/hr)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
@@ -71,7 +71,7 @@ if ! docker compose version &>/dev/null && ! docker-compose version &>/dev/null 
   missing+=" docker-compose"
 fi
 if [[ -n "$missing" ]]; then
-  fail "Install required tools and re-run:${missing}. See README: https://github.com/ymortazavi/unmetered-code#prerequisites"
+  fail "Install required tools and re-run:${missing}. See README: https://github.com/ymortazavi/umcode#prerequisites"
 fi
 
 # ─── Install directory ────────────────────────────────
@@ -89,13 +89,13 @@ if [[ -z "$INSTALL_DIR" || "$INSTALL_DIR" == *'$HOME'* ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/provision.sh" ]]; then
-  if ! yesno "Directory $INSTALL_DIR already exists and looks like unmetered-code. Use it and only configure/run?" "y"; then
+  if ! yesno "Directory $INSTALL_DIR already exists and looks like umcode. Use it and only configure/run?" "y"; then
     fail "Aborted. Choose a different directory or remove $INSTALL_DIR and re-run."
   fi
   ok "Using existing repo at $INSTALL_DIR"
 else
   if [[ -d "$INSTALL_DIR" ]]; then
-    fail "Directory $INSTALL_DIR exists but is not an unmetered-code clone. Remove it or choose another path."
+    fail "Directory $INSTALL_DIR exists but is not an umcode clone. Remove it or choose another path."
   fi
   info "Cloning repository into $INSTALL_DIR ..."
   git clone --depth 1 "$REPO_URL" "$INSTALL_DIR" || fail "git clone failed"

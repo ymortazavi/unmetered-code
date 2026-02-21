@@ -1,6 +1,6 @@
-# unmetered-code
+# umcode
 
-[![CI/CD](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml/badge.svg)](https://github.com/ymortazavi/unmetered-code/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/ymortazavi/umcode/actions/workflows/ci.yml/badge.svg)](https://github.com/ymortazavi/umcode/actions/workflows/ci.yml)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/ymortazavi?logo=github)](https://github.com/sponsors/ymortazavi)
 
 **Private AI coding agents. No rate limits. ~$1.50/hr.**
@@ -16,12 +16,12 @@ Run [Claude Code](https://github.com/anthropics/claude-code) and [OpenCode](http
 - **Web search** — [SearXNG](https://github.com/searxng/searxng) MCP pre-configured for both agents; no search API key required
 - **Full dev stack** — Node.js 24, Python 3.13, Rust, C/C++, and standard tooling in every agent container
 
-> If unmetered-code cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi).
+> If umcode cuts your AI spend, please consider [sponsoring the project](https://github.com/sponsors/ymortazavi).
 
 ## Get started
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/ymortazavi/unmetered-code/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/ymortazavi/umcode/main/install.sh | bash
 ```
 
 Prompts for your Vast.ai API key, finds a GPU, provisions the instance, starts the tunnel, and launches Docker. Prints a destroy command at the end so you can stop billing when done.
@@ -30,21 +30,25 @@ For manual setup, prerequisites, and configuration options, see the **[Setup Gui
 
 ## Usage
 
-Once the stack is up, run an agent:
-
-| Script | Description |
-|--------|-------------|
-| `./opencode.sh` | OpenCode — interactive TUI |
-| `./claude.sh` | Claude Code — prompts for tool permissions |
-| `./claude-yolo.sh` | Claude Code — skips all permission prompts |
-
-Or attach VS Code directly to a container:
+Once the stack is up, run an agent from the installation directory. Your workspace is in $HOME/umcode/workspace.
 
 ```bash
+cd $HOME/umcode
+./opencode.sh        # OpenCode — interactive TUI
+./claude.sh          # Claude Code — prompts for tool permissions
+./claude-yolo.sh     # Claude Code — skips all permission prompts
+```
+
+Or attach [VS Code](https://github.com/microsoft/vscode) directly to a container:
+
+```bash
+cd $HOME/umcode
 ./open-vscode.sh --opencode   # OpenCode
 ./open-vscode.sh --claude     # Claude Code
 ./open-vscode.sh --both       # Both (default)
 ```
+
+Install the official extensions for a richer experience: [OpenCode](https://marketplace.visualstudio.com/items?itemName=sst-dev.opencode) · [Claude Code](https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code)
 
 ## Cost
 
@@ -57,7 +61,7 @@ GPU rental (~$1.50/hr, 2× RTX Pro 6000 on [Vast.ai](https://cloud.vast.ai/?ref_
 | GPT-5.2 | $1.75 | $14.00 | Yes |
 | MiniMax M2.5 API | $0.30 | $1.20 | Yes |
 | MiniMax M2.5 highspeed | $0.60 | $2.40 | Yes |
-| **unmetered-code** | included | ~$5.21* | **None** |
+| **umcode** | included | ~$5.21* | **None** |
 
 \* ~$1.50/hr ÷ 0.288M tok/hr (4 agents × 20 tok/s). Idle time raises effective cost.
 

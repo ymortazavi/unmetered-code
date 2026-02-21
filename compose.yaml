@@ -1,7 +1,7 @@
 services:
   ssh-tunnel:
-    image: ${SSH_TUNNEL_IMAGE:-ghcr.io/ymortazavi/unmetered-code-ssh-tunnel:latest}
-    container_name: ssh-tunnel-unmetered-code
+    image: ${SSH_TUNNEL_IMAGE:-ghcr.io/ymortazavi/umcode-ssh-tunnel:latest}
+    container_name: ssh-tunnel-umcode
     environment:
       - SSH_HOST=${SSH_HOST}
       - SSH_PORT=${SSH_PORT}
@@ -19,7 +19,7 @@ services:
 
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm-unmetered-code
+    container_name: litellm-umcode
     environment:
       - LLAMA_API_BASE=${LLAMA_API_BASE}
     volumes:
@@ -37,8 +37,8 @@ services:
     restart: unless-stopped
 
   opencode:
-    image: ${OPENCODE_IMAGE:-ghcr.io/ymortazavi/unmetered-code-opencode:latest}
-    container_name: opencode-unmetered-code
+    image: ${OPENCODE_IMAGE:-ghcr.io/ymortazavi/umcode-opencode:latest}
+    container_name: opencode-umcode
     stdin_open: true
     tty: true
     environment:
@@ -56,8 +56,8 @@ services:
     restart: unless-stopped
 
   anthropic-proxy:
-    image: ${ANTHROPIC_PROXY_IMAGE:-ghcr.io/ymortazavi/unmetered-code-anthropic-proxy:latest}
-    container_name: anthropic-proxy-unmetered-code
+    image: ${ANTHROPIC_PROXY_IMAGE:-ghcr.io/ymortazavi/umcode-anthropic-proxy:latest}
+    container_name: anthropic-proxy-umcode
     environment:
       - UPSTREAM=http://litellm:4000
       - PORT=4001
@@ -73,8 +73,8 @@ services:
     restart: unless-stopped
 
   claude:
-    image: ${CLAUDE_IMAGE:-ghcr.io/ymortazavi/unmetered-code-claude:latest}
-    container_name: claude-code-unmetered-code
+    image: ${CLAUDE_IMAGE:-ghcr.io/ymortazavi/umcode-claude:latest}
+    container_name: claude-code-umcode
     stdin_open: true
     tty: true
     environment:
@@ -93,7 +93,7 @@ services:
 
   searxng:
     image: searxng/searxng:latest
-    container_name: searxng-unmetered-code
+    container_name: searxng-umcode
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
     volumes:

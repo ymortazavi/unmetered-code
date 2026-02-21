@@ -1,5 +1,5 @@
 [project]
-name = "unmetered-code"
+name = "umcode"
 version = "0.1.0"
 description = "Private AI coding agents with MiniMax M2.5 on Vast.ai"
 readme = "README.md"
