@@ -309,8 +309,8 @@ docker compose down      # stop local containers
 | Quant | ~Size | Fits? | Notes |
 |-------|-------|-------|-------|
 | [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) | ~123 GB | Yes | Default — good quality, ~50 tok/s |
-| UD-Q3_K_XL | ~101 GB | Yes | Smaller, slight quality loss |
-| Q8_0 | ~243 GB | No | Exceeds VRAM |
+| [UD-Q3_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) | ~101 GB | Yes | Smaller, slight quality loss |
+| [Q8_0](https://github.com/ggml-org/llama.cpp/blob/master/examples/quantize/README.md) | ~243 GB | No | Exceeds VRAM |
 
 For MiniMax M2.5 (230B MoE), the default [UD-Q4_K_XL](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs) quant fits
 comfortably in 192 GB with room for KV cache. Adjust `HF_REPO`,
@@ -384,7 +384,7 @@ Per-token API pricing (as of Feb 2026):
 |---|:---:|:---:|:---:|
 | **Claude Sonnet 4.6** | $3.00 | $15.00 | Yes |
 | **GPT-4o** | $2.50 | $10.00 | Yes |
-| **[MiniMax M2.5 API](https://platform.minimax.io/)** | $0.30 | $1.10 | Yes |
+| **[MiniMax M2.5 API](https://platform.minimax.io/docs/guides/pricing-paygo)** | $0.30 | $1.20 | Yes |
 | **unmetered-code** | included\* | ~$5.21\* | **None** |
 
 \*Effective output cost: ~$1.50/hr GPU × 1 hr ÷ (80 tok/s × 3600 s/hr) =
@@ -394,7 +394,7 @@ throughput. Actual $/M depends on GPU utilization; idle time raises it.
 
 Prices from [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing),
 [OpenAI](https://platform.openai.com/docs/pricing), and
-[MiniMax](https://platform.minimax.io/docs/pricing/pay-as-you-go).
+[MiniMax](https://platform.minimax.io/docs/guides/pricing-paygo) (Pay as you go).
 
 With unmetered-code you pay a flat GPU rental regardless of how many
 tokens you use. Whether that's cheaper than the MiniMax API depends on
