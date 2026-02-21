@@ -42,7 +42,6 @@ jobs:
           src: >-
             anthropic-proxy/proxy.py
             bench.py
-            scripts/select_offer.py
 
   ruff-format:
     name: Python format check
@@ -57,7 +56,6 @@ jobs:
           src: >-
             anthropic-proxy/proxy.py
             bench.py
-            scripts/select_offer.py
 
   compose:
     name: Compose validate & build

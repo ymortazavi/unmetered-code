@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# GPU offer selector: uses Python curses when available and TTY, else first offer.
+# GPU offer selector: uses fzf when available and TTY (no flicker), else first offer.
 # Writes selected OFFER_ID to .selected_offer. Run from repo root (sources config.env).
 set -euo pipefail
 
@@ -35,16 +35,21 @@ N=${#OFFER_IDS[@]}
 
 OUTFILE="${REPO_ROOT}/.selected_offer"
 
-# Prefer Python curses selector when stdout is a TTY and python3 is available
-if [[ -t 1 ]] && command -v python3 &>/dev/null; then
-  # Stream: header, then "ID\tdisplay_line" per row
-  {
-    printf '%s\n' "$HEADER"
-    for (( i = 0; i < N; i++ )); do
-      printf '%s\t%s\n' "${OFFER_IDS[$i]}" "${LINES[$i]}"
-    done
-  } | python3 "${SCRIPT_DIR}/select_offer.py" "$OUTFILE" 2>/dev/null && [[ -s "$OUTFILE" ]] && exit 0
+# Use fzf when we have a TTY and fzf is installed (stable, no flicker)
+if [[ -t 1 ]] && command -v fzf &>/dev/null; then
+  SELECTED=$(
+    {
+      printf '%s\n' "$HEADER"
+      for (( i = 0; i < N; i++ )); do
+        printf '%s\t%s\n' "${OFFER_IDS[$i]}" "${LINES[$i]}"
+      done
+    } | fzf --header-lines=1 --height=20 --reverse --tiebreak=index 2>/dev/null
+  ) || true
+  if [[ -n "$SELECTED" ]]; then
+    echo "$SELECTED" | cut -f1 > "$OUTFILE"
+    exit 0
+  fi
 fi
 
-# Fallback: write first offer
+# Fallback: first offer (no fzf, or cancelled, or non-TTY)
 echo "${OFFER_IDS[0]}" > "$OUTFILE"
