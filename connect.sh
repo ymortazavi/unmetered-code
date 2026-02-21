@@ -31,14 +31,7 @@ if [[ -z "$INSTANCE_ID" && -f "${SCRIPT_DIR}/.instance_id" ]]; then
 fi
 [[ -z "$INSTANCE_ID" ]] && fail "No instance ID. Pass as argument or run provision.sh first. Use -v to show recent instance logs."
 
-echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Vast.ai Connector (SSH tunnel)"
-echo "  Instance: ${INSTANCE_ID}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo
-
-info "Fetching instance details..."
+info "Connecting to instance ${INSTANCE_ID}..."
 
 RAW=$(vastai show instance "$INSTANCE_ID" --raw 2>/dev/null) \
   || fail "Could not fetch instance ${INSTANCE_ID}"
@@ -56,11 +49,6 @@ if target in ports:
 else:
     print('')
 " 2>/dev/null)
-
-echo "  Status:    ${STATUS}"
-echo "  Public IP: ${PUBLIC_IP:-not available}"
-echo "  SSH port:  ${SSH_PUBLIC_PORT:-not available}"
-echo
 
 # ──── Show recent instance logs (model download / llama-server) ───────────
 
@@ -136,8 +124,8 @@ DOWNLOAD_MAX_WAIT=7200   # 2 hr
 DOWNLOAD_ELAPSED=0
 PREV_BYTES=0
 while ! ssh "${SSH_OPTS[@]}" "test -f $READY_FLAG" 2>/dev/null; do
-  sleep 30
-  DOWNLOAD_ELAPSED=$((DOWNLOAD_ELAPSED + 30))
+  sleep 5
+  DOWNLOAD_ELAPSED=$((DOWNLOAD_ELAPSED + 5))
   if [[ $DOWNLOAD_ELAPSED -ge $DOWNLOAD_MAX_WAIT ]]; then
     fail "Model download did not complete within $((DOWNLOAD_MAX_WAIT / 60)) minutes. Check: vastai logs $INSTANCE_ID"
   fi
@@ -154,11 +142,11 @@ while ! ssh "${SSH_OPTS[@]}" "test -f $READY_FLAG" 2>/dev/null; do
   RATE_LABEL=""
   if [[ "$DL_BYTES" -gt "$PREV_BYTES" ]] 2>/dev/null; then
     DELTA=$((DL_BYTES - PREV_BYTES))
-    RATE_MBS=$((DELTA / 30 / 1048576))
+    RATE_MBS=$((DELTA / 5 / 1048576))
     if [[ $RATE_MBS -gt 0 ]]; then
       RATE_LABEL=" ${RATE_MBS} MB/s"
     else
-      RATE_KBS=$((DELTA / 30 / 1024))
+      RATE_KBS=$((DELTA / 5 / 1024))
       [[ $RATE_KBS -gt 0 ]] && RATE_LABEL=" ${RATE_KBS} KB/s"
     fi
   fi
@@ -214,52 +202,10 @@ ok "Wrote .env"
 
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-ok "Connection configured!"
+ok "Connection configured. Tunnel: localhost:${LLAMA_PORT} → vast:${LLAMA_PORT}"
 echo
-echo "  SSH endpoint:    ${PUBLIC_IP}:${SSH_PUBLIC_PORT}"
-echo "  Tunnel:          localhost:${LLAMA_PORT}  →ssh→  vast:${LLAMA_PORT}"
-echo "  LiteLLM backend: http://ssh-tunnel:${LLAMA_PORT}/v1"
-echo
-echo "  Run all commands from:  cd ${SCRIPT_DIR}"
-echo "  Agent workspace:        ${SCRIPT_DIR}/workspace"
-echo
-echo "  Start local services (required before verify):"
-echo "    docker compose up -d"
-echo "  On Apple Silicon (arm64), build from source instead (first run: 2–5+ min build):"
-echo "    docker compose -f compose.yaml -f compose.build.yaml up -d --build"
-echo
-echo "  Then verify tunnel (no output = success; any error message = tunnel not ready):"
-echo "    docker compose exec ssh-tunnel nc -z 127.0.0.1 ${LLAMA_PORT}"
-echo
-echo "  SSH into instance:"
-echo "    ssh -p ${SSH_PUBLIC_PORT} root@${PUBLIC_IP}"
-echo
-echo "  View logs:"
-echo "    vastai logs ${INSTANCE_ID}"
-echo "    (or run connect.sh with -v to show recent logs)"
-echo
-echo "  Run agents:"
-echo "    ./opencode.sh          OpenCode agent"
-echo "    ./claude.sh            Claude Code"
-echo "    ./claude-yolo.sh       Claude Code (--dangerously-skip-permissions)"
-echo "    ./open-vscode.sh --opencode   VS Code: OpenCode"
-echo "    ./open-vscode.sh --claude     VS Code: Claude Code"
-echo "    ./open-vscode.sh --both       VS Code: Both"
+echo "  Start stack:   docker compose up -d"
+echo "  Run agents:   umcode opencode | umcode claude | umcode vscode --both"
+echo "  Stop billing: umcode destroy  (instance ${INSTANCE_ID})"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo
-printf '\033[1;31m'
-echo "═══════════════════════════════════════════════════════════════════════"
-echo "  TO STOP BILLING — Destroy the Vast.ai instance when you're done"
-echo "═══════════════════════════════════════════════════════════════════════"
-echo
-echo "  Instance ID: ${INSTANCE_ID}"
-echo
-echo "  Destroy instance and stop charges:"
-echo "    ./destroy.sh"
-echo
-echo "  Or from anywhere:  vastai destroy instance ${INSTANCE_ID}"
-echo
-echo "  Manage instances:  https://cloud.vast.ai/instances/"
-echo "═══════════════════════════════════════════════════════════════════════"
-printf '\033[0m'
 echo
