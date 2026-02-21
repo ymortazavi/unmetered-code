@@ -1,0 +1,12 @@
+# Add this file when building from source instead of pulling prebuilt images:
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
+
+services:
+  ssh-tunnel:
+    build: ./ssh-tunnel
+  opencode:
+    build: ./opencode
+  anthropic-proxy:
+    build: ./anthropic-proxy
+  claude:
+    build: ./claude

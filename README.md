@@ -199,10 +199,15 @@ minute or two.
 ### 6. Start local services
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
-This starts five containers:
+This pulls the prebuilt images from GHCR and starts the stack. To build from
+source instead, use:
+
+```bash
+docker compose -f compose.yaml -f compose.build.yaml up -d --build
+```
 
 | Container | Role |
 |-----------|------|

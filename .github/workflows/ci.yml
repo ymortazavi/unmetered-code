@@ -73,7 +73,7 @@ jobs:
         run: docker compose config
 
       - name: Build images
-        run: docker compose build
+        run: docker compose -f compose.yaml -f compose.build.yaml build
 
   push-images:
     name: Build and push to GHCR

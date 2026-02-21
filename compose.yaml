@@ -1,7 +1,6 @@
 services:
   ssh-tunnel:
-    build: ./ssh-tunnel
-    image: ssh-tunnel:unmetered-code
+    image: ${SSH_TUNNEL_IMAGE:-ghcr.io/ymortazavi/unmetered-code-ssh-tunnel:latest}
     container_name: ssh-tunnel-unmetered-code
     environment:
       - SSH_HOST=${SSH_HOST}
@@ -38,8 +37,7 @@ services:
     restart: unless-stopped
 
   opencode:
-    build: ./opencode
-    image: opencode-dev:unmetered-code
+    image: ${OPENCODE_IMAGE:-ghcr.io/ymortazavi/unmetered-code-opencode:latest}
     container_name: opencode-unmetered-code
     stdin_open: true
     tty: true
@@ -57,8 +55,7 @@ services:
     restart: unless-stopped
 
   anthropic-proxy:
-    build: ./anthropic-proxy
-    image: anthropic-proxy:unmetered-code
+    image: ${ANTHROPIC_PROXY_IMAGE:-ghcr.io/ymortazavi/unmetered-code-anthropic-proxy:latest}
     container_name: anthropic-proxy-unmetered-code
     environment:
       - UPSTREAM=http://litellm:4000
@@ -75,8 +72,7 @@ services:
     restart: unless-stopped
 
   claude:
-    build: ./claude
-    image: claude-code-dev:unmetered-code
+    image: ${CLAUDE_IMAGE:-ghcr.io/ymortazavi/unmetered-code-claude:latest}
     container_name: claude-code-unmetered-code
     stdin_open: true
     tty: true
