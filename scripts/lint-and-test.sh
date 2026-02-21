@@ -33,12 +33,12 @@ fi
 # --- Ruff (Python lint + format) ---
 echo "→ Running ruff check..."
 if command -v ruff &>/dev/null; then
-  ruff check anthropic-proxy/proxy.py bench.py && echo "  ruff check OK" || FAILED=1
+  ruff check anthropic-proxy/proxy.py bench.py scripts/select_offer.py && echo "  ruff check OK" || FAILED=1
   echo "→ Running ruff format --check..."
-  ruff format --check anthropic-proxy/proxy.py bench.py && echo "  ruff format OK" || FAILED=1
+  ruff format --check anthropic-proxy/proxy.py bench.py scripts/select_offer.py && echo "  ruff format OK" || FAILED=1
 elif [[ -d .venv ]] && [[ -f .venv/bin/ruff ]]; then
-  .venv/bin/ruff check anthropic-proxy/proxy.py bench.py && echo "  ruff check OK" || FAILED=1
-  .venv/bin/ruff format --check anthropic-proxy/proxy.py bench.py && echo "  ruff format OK" || FAILED=1
+  .venv/bin/ruff check anthropic-proxy/proxy.py bench.py scripts/select_offer.py && echo "  ruff check OK" || FAILED=1
+  .venv/bin/ruff format --check anthropic-proxy/proxy.py bench.py scripts/select_offer.py && echo "  ruff format OK" || FAILED=1
 else
   echo "  ruff not found. Install: pip install ruff  or  uv sync --extra dev"
 fi

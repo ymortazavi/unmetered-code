@@ -66,8 +66,6 @@ umcode vscode --claude     # Claude Code
 umcode vscode --both       # Both (default)
 ```
 
-You can also run the scripts directly from the install directory: `opencode.sh`, `claude.sh`, `open-vscode.sh`, etc.
-
 Install the official extensions for a richer experience: [OpenCode](https://marketplace.visualstudio.com/items?itemName=sst-dev.opencode) · [Claude Code](https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code)
 
 ## Cost
