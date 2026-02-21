@@ -17,16 +17,16 @@ vastai set api-key "$VAST_API_KEY" >/dev/null 2>&1
 RAW=$(vastai search offers 'gpu_name in [RTX_PRO_6000_S,RTX_PRO_6000_WS] num_gpus==2 reliability>0.9' -o dph 2>/dev/null) || true
 [[ -z "$RAW" ]] && { echo "No offers returned from vastai" >&2; exit 1; }
 
-# Parse: first line = header, lines starting with digits = data (first column = ID).
-# Skip lines whose first number is too short (e.g. "41" from a count/pagination line).
+# Parse: first line = header, lines with many columns starting with digits = data rows.
+# Skip short/stray lines (counts, pagination) by requiring ≥5 whitespace-separated fields.
 HEADER=""
 declare -a OFFER_IDS
 declare -a LINES
 while IFS= read -r line; do
-  if [[ "$line" =~ ^[[:space:]]*([0-9]+)(.*) ]]; then
-    id="${BASH_REMATCH[1]}"
-    [[ ${#id} -ge 6 ]] || continue
-    OFFER_IDS+=("$id")
+  if [[ "$line" =~ ^[[:space:]]*([0-9]+) ]]; then
+    read -ra _fields <<< "$line"
+    [[ ${#_fields[@]} -ge 5 ]] || continue
+    OFFER_IDS+=("${_fields[0]}")
     LINES+=("$line")
   elif [[ -z "$HEADER" && -n "$line" ]]; then
     HEADER="$line"
