@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # So scripts that source config.env don't trigger SC1091 (file not found)
+      - name: Create minimal config.env for Shellcheck
+        run: |
+          echo 'VAST_API_KEY=""' > config.env
+
       - name: Run Shellcheck
         uses: ludeeus/action-shellcheck@v0.3.0
         with:
@@ -25,13 +30,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Ruff
-        uses: astral-sh/setup-ruff@v4
-        with:
-          version: "latest"
-
       - name: Run Ruff
-        run: ruff check anthropic-proxy/proxy.py bench.py
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: >-
+            anthropic-proxy/proxy.py
+            bench.py
 
   ruff-format:
     name: Python format check
@@ -39,13 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Ruff
-        uses: astral-sh/setup-ruff@v4
-        with:
-          version: "latest"
-
       - name: Run Ruff format check
-        run: ruff format --check anthropic-proxy/proxy.py bench.py
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check --diff"
+          src: >-
+            anthropic-proxy/proxy.py
+            bench.py
 
   compose:
     name: Compose validate & build
