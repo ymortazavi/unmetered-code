@@ -116,7 +116,19 @@ if [[ -f config.env ]] && grep -q '^VAST_API_KEY="[^"]*"' config.env 2>/dev/null
 fi
 if [[ -z "${VAST_API_KEY:-}" ]]; then
   echo
-  echo "Get your API key from: https://cloud.vast.ai/account/"
+  if ! yesno "Do you have a Vast.ai account?" "y"; then
+    echo
+    info "Sign up and add credits here:"
+    echo "  https://cloud.vast.ai/?ref_id=399895"
+    echo
+    info "Once you have an account, get your API key from:"
+    echo "  https://cloud.vast.ai/manage-keys/"
+    echo
+    info "Then re-run this installer."
+    exit 0
+  fi
+  echo
+  echo "Get your API key from: https://cloud.vast.ai/manage-keys/"
   prompt VAST_API_KEY "Vast.ai API key" ""
   [[ -z "${VAST_API_KEY:-}" ]] && fail "VAST_API_KEY is required"
 fi
