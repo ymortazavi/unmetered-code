@@ -128,7 +128,7 @@ if [[ -z "${VAST_API_KEY:-}" ]]; then
     exit 0
   fi
   echo
-  echo "Get your API key from: https://cloud.vast.ai/manage-keys/"
+  echo "Get your API key (read/write access) from: https://cloud.vast.ai/manage-keys/"
   prompt VAST_API_KEY "Vast.ai API key" ""
   [[ -z "${VAST_API_KEY:-}" ]] && fail "VAST_API_KEY is required"
 fi
@@ -217,6 +217,7 @@ info "Provisioning Vast.ai instance (this may take a few minutes)..."
 
 INSTANCE_ID="$(cat .instance_id 2>/dev/null || true)"
 [[ -z "$INSTANCE_ID" ]] && fail "No .instance_id after provision"
+ok "Instance ${INSTANCE_ID} created. View it at: https://cloud.vast.ai/instances/"
 
 # ─── Connect (SSH tunnel + wait for model) ──────────────
 

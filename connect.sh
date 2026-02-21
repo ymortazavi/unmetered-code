@@ -110,18 +110,79 @@ ok "SSH connection verified"
 READY_FLAG="/workspace/llama.cpp/models/.download_complete"
 LLAMA_PORT_REMOTE="${LLAMA_PORT:-8080}"
 
+MODEL_DIR="/workspace/llama.cpp/models"
+
+TOTAL_BYTES=0
+TOTAL_HUMAN=""
+if [[ -n "${HF_REPO:-}" && -n "${HF_QUANT:-}" ]] && command -v curl &>/dev/null; then
+  IFS=' ' read -r TOTAL_BYTES TOTAL_HUMAN < <(
+    curl -sL "https://huggingface.co/api/models/${HF_REPO}/tree/main/${HF_QUANT}" 2>/dev/null \
+    | python3 -c "
+import sys, json
+try:
+    files = json.load(sys.stdin)
+    total = sum(f.get('size', 0) for f in files if isinstance(f, dict))
+    if total >= 1073741824:
+        print(total, f'{total/1073741824:.0f}G')
+    elif total > 0:
+        print(total, f'{total/1048576:.0f}M')
+except: pass" 2>/dev/null
+  ) || true
+  TOTAL_BYTES="${TOTAL_BYTES:-0}"
+fi
+
 info "Waiting for model download to complete (this can take 5–10 min)..."
 DOWNLOAD_MAX_WAIT=7200   # 2 hr
 DOWNLOAD_ELAPSED=0
+PREV_BYTES=0
 while ! ssh "${SSH_OPTS[@]}" "test -f $READY_FLAG" 2>/dev/null; do
   sleep 30
   DOWNLOAD_ELAPSED=$((DOWNLOAD_ELAPSED + 30))
   if [[ $DOWNLOAD_ELAPSED -ge $DOWNLOAD_MAX_WAIT ]]; then
     fail "Model download did not complete within $((DOWNLOAD_MAX_WAIT / 60)) minutes. Check: vastai logs $INSTANCE_ID"
   fi
-  printf '\r  %d min elapsed...' "$((DOWNLOAD_ELAPSED / 60))"
+
+  IFS=' ' read -r DL_BYTES DL_HUMAN < <(
+    ssh "${SSH_OPTS[@]}" "
+      b=\$(du -sb $MODEL_DIR 2>/dev/null | cut -f1 || echo 0)
+      h=\$(du -sh $MODEL_DIR 2>/dev/null | cut -f1 || echo '?')
+      echo \"\$b \$h\"" 2>/dev/null
+  ) || { DL_BYTES=0; DL_HUMAN="?"; }
+  DL_BYTES="${DL_BYTES:-0}"
+  DL_HUMAN="${DL_HUMAN:-?}"
+
+  RATE_LABEL=""
+  if [[ "$DL_BYTES" -gt "$PREV_BYTES" ]] 2>/dev/null; then
+    DELTA=$((DL_BYTES - PREV_BYTES))
+    RATE_MBS=$((DELTA / 30 / 1048576))
+    if [[ $RATE_MBS -gt 0 ]]; then
+      RATE_LABEL=" ${RATE_MBS} MB/s"
+    else
+      RATE_KBS=$((DELTA / 30 / 1024))
+      [[ $RATE_KBS -gt 0 ]] && RATE_LABEL=" ${RATE_KBS} KB/s"
+    fi
+  fi
+  PREV_BYTES="$DL_BYTES"
+
+  if [[ "$TOTAL_BYTES" -gt 0 ]] 2>/dev/null; then
+    PCT=$((DL_BYTES * 100 / TOTAL_BYTES))
+    [[ $PCT -gt 100 ]] && PCT=100
+    BAR_W=30
+    FILLED=$((PCT * BAR_W / 100))
+    EMPTY=$((BAR_W - FILLED))
+    BAR="\033[32m"
+    for ((i=0; i<FILLED; i++)); do BAR+="━"; done
+    if [[ $FILLED -lt $BAR_W ]]; then
+      BAR+="╸\033[90m"
+      for ((i=1; i<EMPTY; i++)); do BAR+="─"; done
+    fi
+    BAR+="\033[0m"
+    printf '\r  %b %s/%s %3d%%%s %d min' "$BAR" "$DL_HUMAN" "$TOTAL_HUMAN" "$PCT" "$RATE_LABEL" "$((DOWNLOAD_ELAPSED / 60))"
+  else
+    printf '\r  downloaded: %s%s  %d min elapsed' "$DL_HUMAN" "$RATE_LABEL" "$((DOWNLOAD_ELAPSED / 60))"
+  fi
 done
-printf '\r'
+printf '\r%80s\r' ""
 ok "Model download complete"
 
 info "Waiting for llama-server to listen on port ${LLAMA_PORT_REMOTE}..."
