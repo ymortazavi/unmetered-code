@@ -44,10 +44,10 @@ yesno() {
 }
 
 echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  umcode — one-shot installer"
-echo "  Private AI coding agents on Vast.ai (~\$1.50/hr)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Unmetered private AI coding agents on Vast.ai (~\$1.50/hr)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
 
 # ─── Dependency checks ─────────────────────────────────
