@@ -220,6 +220,8 @@ echo "  SSH endpoint:    ${PUBLIC_IP}:${SSH_PUBLIC_PORT}"
 echo "  Tunnel:          localhost:${LLAMA_PORT}  →ssh→  vast:${LLAMA_PORT}"
 echo "  LiteLLM backend: http://ssh-tunnel:${LLAMA_PORT}/v1"
 echo
+echo "  Run all commands from:  cd ${SCRIPT_DIR}"
+echo
 echo "  Start local services (required before verify):"
 echo "    docker compose up -d"
 echo "  On Apple Silicon (arm64), build from source instead (first run: 2–5+ min build):"
